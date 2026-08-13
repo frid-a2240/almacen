@@ -1,92 +1,171 @@
-# Almacén ISP — Control de Herramienta
+# ALMACEN ISP
 
-Sistema de control de herramienta de almacén: catálogo de herramientas por TOOL ID,
-catálogo de empleados/responsables (foto, supervisor, área) y registro de
-préstamos/devoluciones con firma. Reemplaza el control anterior en Google Sheets.
+Reconstrucción como app propia del sistema "TOOLS ID ISP WAREHOUSE" que antes vivía
+en AppSheet: catálogo de productos, empleados, control de resguardo (préstamos con
+firma), stock por producto, departamentos y clase/familia. Mismas 7 vistas, mismos
+campos y datos que la app de AppSheet — pensado para dejar de depender de ella.
 
 ## Estructura
 
 ```
-backend/    API en Node.js + TypeScript + Express + SQLite
-frontend/   App en React + TypeScript + Vite + Tailwind CSS
+backend/    API en FastAPI + SQLAlchemy + PostgreSQL
+frontend/   App en React 19 + MUI + Vite — sirve de dashboard web y de fuente del APK
 ```
 
-## Cómo funciona
-
-- **Pantalla principal (modo kiosko, sin login)** — la opera quien está en almacén:
-  - Buscar herramienta por TOOL ID / nombre / número de serie (compatible con lector
-    de código de barras).
-  - Iniciar préstamo: se captura el número de empleado.
-    - Si el empleado ya está registrado, se autocompletan sus datos (nombre, foto,
-      supervisor, área) y solo falta firmar.
-    - Si no está registrado, se da de alta ahí mismo (foto + datos) y luego firma.
-  - Ver qué herramienta está prestada y a cargo de quién.
-  - Devolver herramienta: deja de aparecer como "a cargo de" ese empleado.
-- **Panel administrativo (`/admin`, con login)** — para gestionar el catálogo:
-  - Familias y herramientas (alta, edición, baja, cambio de estado).
-  - Consulta/edición de empleados registrados.
-  - Historial completo de préstamos y devoluciones, con enlace a la firma capturada.
-
-## Requisitos
-
-- Node.js 18 o superior.
+El mismo código de `frontend/` se compila de dos formas distintas (ver
+`vite.config.js`):
+- `npm run build` → dashboard web, lo sirve el propio backend bajo `/almacen/`.
+- `npm run build:capacitor` → fuente del APK de Android (`frontend/android/`).
 
 ## Puesta en marcha (desarrollo)
 
 ```bash
-# Backend (API en :4000)
+# Backend (API en :8001)
 cd backend
-cp .env.example .env
-npm install
-npm run dev
-
-# Frontend (Vite en :5173, con proxy a la API)
-cd frontend
-npm install
-npm run dev
+cp .env.example .env      # rellenar DATABASE_URL y generar un JWT_SECRET propio
+python -m venv venv
+./venv/Scripts/activate
+pip install -r requirements.txt
+python -m uvicorn app.main:api --host 127.0.0.1 --port 8001
 ```
 
-Abre `http://localhost:5173`. La primera vez que arranca el backend crea
-automáticamente:
-- Un usuario administrador (usuario/contraseña definidos en `.env`, por defecto
-  `admin` / `admin123` — **cámbialos** editando `ADMIN_USERNAME`/`ADMIN_PASSWORD` en
-  `backend/.env` antes de usarlo en producción).
-- Un catálogo de ejemplo (familias + una herramienta `TOOL-0001`) para probar el flujo.
-
-## Despliegue en el almacén (producción, un solo servidor en red local)
+> No uses `--reload`: en esta máquina genera un segundo proceso duplicado (worker
+> viejo) por un problema conocido de uvicorn con el Python del sistema en Windows.
+> Si vas a reiniciar el backend, verifica antes que no haya quedado un `python.exe`
+> corriendo de una sesión anterior.
 
 ```bash
+# Frontend (Vite en :5173)
 cd frontend
+cp .env.example .env       # VITE_API_URL=http://localhost:8001
 npm install
-npm run build        # genera frontend/dist
-
-cd ../backend
-npm install
-npm run build         # compila a backend/dist
-npm start              # sirve la API y el frontend compilado en un solo puerto
+npm run dev
 ```
 
-El backend sirve el frontend ya compilado desde el mismo puerto (por defecto
-`4000`), así que basta con levantar `backend` en una PC del almacén y entrar desde
-cualquier otro dispositivo de la red local a `http://<IP-de-esa-PC>:4000`.
+Abre `http://localhost:5173`. El login no tiene registro público — los usuarios se
+crean desde la sección "Usuarios" del sidebar (solo visible para administradores).
 
-Para correr el backend como servicio persistente en Windows (que siga corriendo
-aunque se cierre la sesión), se recomienda usar [PM2](https://pm2.keymetrics.io/) o
-el Programador de tareas de Windows apuntando a `npm start` dentro de `backend/`.
+## Despliegue en el servidor (IIS — GACENSSV03)
 
-## Datos y archivos
+Mismo patrón ya usado y probado en un proyecto hermano en este mismo servidor
+(ver Parte 09 de esa guía para los problemas ya resueltos). Resumen adaptado a
+este proyecto — alias `almacen`, IP fija del servidor `192.168.4.13`.
 
-- Base de datos SQLite en `backend/data/almacen.db` (un solo archivo, sin
-  necesidad de instalar motor de base de datos aparte).
-- Fotos de empleados y firmas en `backend/uploads/photos` y
-  `backend/uploads/signatures`.
-- **Respaldo**: para hacer backup del sistema basta con copiar la carpeta
-  `backend/data/` y `backend/uploads/`.
+### 1. Backend, en el servidor
 
-## Variables de entorno (`backend/.env`)
+```powershell
+cd D:\Aplicaciones\wwwroot
+git clone https://github.com/frid-a2240/almacen.git almacen
+cd almacen\backend
+& "C:\Program Files\Python312\python.exe" -m venv venv312   # confirmar antes qué Python hay en el servidor
+.\venv312\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
 
-| Variable | Descripción |
+Crear `backend\.env` en el servidor (parte de `backend/.env.example`, con los
+valores reales — **no reutilizar el `JWT_SECRET` de la laptop**):
+
+```
+DATABASE_URL=postgresql://postgres:<password del Postgres del servidor>@localhost:5432/tools_id_isp_warehouse
+UPLOAD_DIR=D:\Aplicaciones\wwwroot\almacen\backend\uploads   # ruta ABSOLUTA, IIS no comparte cwd con la terminal
+JWT_SECRET=<generar uno nuevo>
+JWT_EXPIRE_DAYS=3650
+```
+
+### 2. Base de datos
+
+```powershell
+# En la laptop
+& "C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" -U postgres -h localhost -d tools_id_isp_warehouse -F p -f almacen_backup.sql
+# copiar el .sql al servidor por escritorio remoto/carpeta compartida (nunca por git)
+
+# En el servidor
+& "C:\Program Files\PostgreSQL\18\bin\createdb.exe" -U postgres tools_id_isp_warehouse
+& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -d tools_id_isp_warehouse -f C:\ruta\almacen_backup.sql
+```
+
+La carpeta `backend/uploads/` (fotos y firmas) tampoco viaja con git ni con el
+dump: comprimir (`Compress-Archive`) y copiar aparte, luego `Expand-Archive` en
+el servidor dentro de la ruta que apunta `UPLOAD_DIR`.
+
+### 3. Dashboard web (build en la laptop, se sube con git)
+
+```powershell
+cd frontend
+npm run build          # cae en backend/dist, que SÍ va a git
+git add backend/dist
+git commit -m "Build de producción"
+git push
+```
+
+En el servidor: `git pull` (y listo, no hace falta Node.js ahí).
+
+### 4. IIS
+
+`runserver.py` y `web.config` ya están en la raíz del repo — solo ajustar las 3
+rutas de `web.config` si el clon queda en un lugar distinto de
+`D:\Aplicaciones\wwwroot\almacen`. En IIS Manager:
+
+1. Sites → Default Web Site → Add Application… → Alias `almacen`, Physical path
+   `D:\Aplicaciones\wwwroot\almacen`.
+2. Application Pools → nueva pool `almacen`, .NET CLR version **No Managed
+   Code** → asignarla a la sub-aplicación.
+3. `icacls` (PowerShell como administrador):
+   ```powershell
+   icacls "D:\Aplicaciones\wwwroot\almacen" /grant "IIS AppPool\almacen:(OI)(CI)F" /T
+   icacls "C:\Program Files\Python312" /grant "IIS AppPool\almacen:(OI)(CI)R" /T
+   ```
+4. `iisreset`.
+
+Probar desde cualquier equipo de la red: `http://gacenssv03/almacen/` debe
+mostrar el dashboard, y `http://gacenssv03/almacen/api/` debe devolver JSON.
+
+### Actualizar después de la primera vez
+
+```powershell
+# Solo backend
+git push          # laptop
+git pull; iisreset  # servidor
+
+# Dashboard web
+npm run build; git add backend/dist; git commit; git push   # laptop
+git pull; iisreset                                            # servidor
+```
+
+## El APK
+
+No se sube a IIS — el build vive dentro del teléfono/tablet. La URL de la API
+para el APK apunta a la **IP fija** del servidor, nunca a su nombre: el WebView
+de Android no resuelve `gacenssv03` aunque el navegador del teléfono sí puede
+(limitación de DNS de la red interna hacia celulares/tablets, ya confirmada).
+Ver `frontend/.env.capacitor`.
+
+```powershell
+cd frontend
+npm run build:capacitor
+npx cap sync android
+
+cd android
+.\gradlew.bat assembleDebug      # apk de prueba, sin firmar para release
+.\gradlew.bat assembleRelease     # apk firmado con el keystore de producción
+```
+
+APKs generados en `android/app/build/outputs/apk/{debug,release}/`.
+
+- El keystore de firma vive **fuera del repo**, en
+  `..\almacen-keystore\almacen-isp-release.jks` (ver el `LEEME_IMPORTANTE.txt`
+  en esa misma carpeta) — **hacerle respaldo en al menos un lugar más**. Si se
+  pierde, ya no se pueden firmar actualizaciones sobre los APK ya instalados.
+- Un APK release y uno debug firmados con llaves distintas **no coexisten** en
+  el mismo dispositivo — desinstalar antes de instalar el otro.
+- No hay actualización automática: reinstalar el APK a mano en cada tableta
+  cuando cambie el código o la URL del backend.
+
+## Variables de entorno
+
+| Archivo | Uso |
 |---|---|
-| `PORT` | Puerto del servidor (default `4000`) |
-| `JWT_SECRET` | Secreto para firmar la sesión del panel admin — cámbialo en producción |
-| `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `ADMIN_NAME` | Credenciales del admin sembrado la primera vez que arranca (si ya existe un admin, no se vuelve a crear) |
+| `backend/.env` | Backend (dev y producción) — ver `backend/.env.example` |
+| `frontend/.env` | Dashboard en desarrollo local (`npm run dev`) |
+| `frontend/.env.production` | Dashboard para el build web (`npm run build`) — URL relativa, mismo origen que la API |
+| `frontend/.env.capacitor` | APK (`npm run build:capacitor`) — IP fija del servidor |
