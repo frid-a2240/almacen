@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ALMACEN ISP</string>
+    <string name="title_activity_main">ALMACEN ISP</string>
+    <string name="package_name">com.isp.almacen</string>
+    <string name="custom_url_scheme">com.isp.almacen</string>
+</resources>
