@@ -1,0 +1,36 @@
+# Backend (Python)
+backend/venv/
+backend/venv312/
+backend/.env
+backend/uploads/
+**/__pycache__/
+*.pyc
+*.sql
+
+# Frontend (Node)
+frontend/node_modules/
+frontend/dist/
+!backend/dist/
+frontend/.env
+frontend/.env.local
+
+# Capacitor / Android (added when the APK track is set up)
+frontend/android/app/build/
+frontend/android/build/
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/android/app/*.jks
+frontend/android/app/*.keystore
+frontend/android/key.properties
+frontend/ios/
+
+# Raw AppSheet migration data — source of truth kept local only, never pushed
+extracted/
+extracted_2026-08-13/
+images/
+sync_response*.json
+network.har
+
+# Editor / OS
+.DS_Store
+Thumbs.db
