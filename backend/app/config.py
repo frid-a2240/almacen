@@ -1,5 +1,11 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+
+# Ruta absoluta: bajo IIS (HttpPlatformHandler) el cwd del proceso no es
+# necesariamente backend/, así que una ruta relativa ".env" no se encontraría.
+_ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -25,7 +31,7 @@ class Settings(BaseSettings):
     JWT_EXPIRE_DAYS: int = 3650
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_ENV_FILE,
         env_file_encoding="utf-8",
         case_sensitive=True,
     )
