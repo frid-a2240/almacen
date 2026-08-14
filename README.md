@@ -70,7 +70,12 @@ DATABASE_URL=postgresql://postgres:<password del Postgres del servidor>@localhos
 UPLOAD_DIR=D:\Aplicaciones\wwwroot\almacen\backend\uploads   # ruta ABSOLUTA, IIS no comparte cwd con la terminal
 JWT_SECRET=<generar uno nuevo>
 JWT_EXPIRE_DAYS=3650
+CORS_ORIGINS=http://localhost
 ```
+
+`CORS_ORIGINS` **no se puede dejar vacío** aunque el dashboard web no lo
+necesite (mismo origen que la API): el APK sí lo necesita, porque Capacitor
+sirve la app desde el origen `http://localhost`, distinto al del servidor.
 
 ### 2. Base de datos
 
