@@ -32,7 +32,11 @@ client.interceptors.response.use(
 
 export function imageURL(rutaRelativa) {
   if (!rutaRelativa) return null
-  if (rutaRelativa.startsWith('http')) return rutaRelativa
+  // blob:/data: son previsualizaciones locales (foto recién tomada, aún sin
+  // subir) — ya son una URL completa, no se les debe anteponer la API.
+  if (rutaRelativa.startsWith('http') || rutaRelativa.startsWith('blob:') || rutaRelativa.startsWith('data:')) {
+    return rutaRelativa
+  }
   return `${API_URL}/uploads/${rutaRelativa}`
 }
 
