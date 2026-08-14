@@ -29,8 +29,11 @@ api.add_middleware(
 )
 
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+# El prefijo de URL siempre es "/uploads" (el frontend lo asume fijo en
+# imageURL()), sin importar el valor de UPLOAD_DIR — que en el servidor es
+# una ruta absoluta de disco (D:\...\uploads), no algo usable como URL.
 api.mount(
-    f"/{settings.UPLOAD_DIR}",
+    "/uploads",
     StaticFiles(directory=settings.UPLOAD_DIR),
     name="uploads",
 )

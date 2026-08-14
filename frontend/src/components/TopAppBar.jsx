@@ -28,7 +28,7 @@ export default function TopAppBar({ onToggleSidebar }) {
         <IconButton edge="start" onClick={onToggleSidebar} sx={{ color: 'text.primary' }}>
           <MenuIcon />
         </IconButton>
-        <Box component="img" src="/logo-icon.png" alt="ISP" sx={{ width: 30, height: 30 }} />
+        <Box component="img" src={`${import.meta.env.BASE_URL}logo-icon.png`} alt="ISP" sx={{ width: 30, height: 30 }} />
         <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ mr: 2, letterSpacing: 0.5 }}>
           ALMACEN ISP
         </Typography>

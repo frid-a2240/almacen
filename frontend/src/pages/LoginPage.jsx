@@ -34,7 +34,7 @@ export default function LoginPage() {
         sx={{ width: '100%', maxWidth: 380, p: 4, bgcolor: 'background.paper', borderRadius: 2 }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-          <Box component="img" src="/logo-icon.png" alt="ISP" sx={{ width: 56, height: 56, mb: 1.5 }} />
+          <Box component="img" src={`${import.meta.env.BASE_URL}logo-icon.png`} alt="ISP" sx={{ width: 56, height: 56, mb: 1.5 }} />
           <Typography variant="h6" fontWeight={700} letterSpacing={0.5}>ALMACEN ISP</Typography>
           <Typography variant="body2" color="text.secondary">Inicia sesión para continuar</Typography>
         </Box>
