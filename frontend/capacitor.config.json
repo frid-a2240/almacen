@@ -1,5 +1,8 @@
 {
   "appId": "com.isp.almacen",
   "appName": "ALMACEN ISP",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http"
+  }
 }
