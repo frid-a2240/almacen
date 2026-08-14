@@ -15,8 +15,12 @@ export default function LoginPage() {
     setEntrando(true)
     try {
       await login(numeroControl, password)
-    } catch {
-      setError('Número de control o contraseña incorrectos.')
+    } catch (err) {
+      setError(
+        err.response
+          ? 'Número de control o contraseña incorrectos.'
+          : 'No se pudo conectar con el servidor. Verifica que estés conectado a la red/Wi-Fi correcta.',
+      )
     } finally {
       setEntrando(false)
     }
