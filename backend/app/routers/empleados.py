@@ -80,6 +80,7 @@ def eliminar(id_numero_empleado: str, db: Session = Depends(get_db)):
 def movimientos_de_empleado(id_numero_empleado: str, db: Session = Depends(get_db)):
     return (
         db.query(MovimientoResguardo)
+        .options(joinedload(MovimientoResguardo.producto_ref), joinedload(MovimientoResguardo.empleado_ref))
         .filter(MovimientoResguardo.empleado_id == id_numero_empleado)
         .order_by(MovimientoResguardo.fecha_movimiento.desc())
         .all()
@@ -105,20 +106,26 @@ def resguardo_excel(id_numero_empleado: str, db: Session = Depends(get_db)):
     ws.append([f"Generado: {date.today().isoformat()}"])
     ws.append([])
 
-    encabezados = ["Código SAI / SKU", "Descripción", "Número económico", "UDM", "Cantidad a resguardo", "Último movimiento", "Número de vale"]
+    encabezados = ["Fecha", "Numero de Vale", "SKU", "Descripcion", "UDM", "Numero Ec", "Cantidad", "Observaciones", "Costo Unitario"]
     ws.append(encabezados)
     fila_encabezado = ws.max_row
     for c in range(1, len(encabezados) + 1):
         ws.cell(row=fila_encabezado, column=c).font = Font(bold=True)
 
-    for sku, descripcion, numero_economico, udm, cantidad, ultimo_movimiento, numero_de_vale in filas:
+    for f in filas:
         ws.append([
-            sku, descripcion, numero_economico, udm, float(cantidad),
-            ultimo_movimiento.isoformat() if ultimo_movimiento else "",
-            numero_de_vale,
+            f["fecha"].isoformat() if f["fecha"] else "",
+            f["numero_de_vale"],
+            f["sku"],
+            f["descripcion"],
+            f["udm"],
+            f["numero_economico"],
+            float(f["cantidad"]),
+            f["observaciones"],
+            float(f["costo_unitario"]) if f["costo_unitario"] is not None else None,
         ])
 
-    for i, ancho in enumerate([20, 45, 18, 8, 18, 16, 16], start=1):
+    for i, ancho in enumerate([12, 16, 20, 45, 8, 14, 12, 30, 14], start=1):
         ws.column_dimensions[get_column_letter(i)].width = ancho
 
     buffer = BytesIO()

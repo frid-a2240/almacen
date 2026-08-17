@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy import text
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models import Producto, MovimientoResguardo, ClaseFamilia
@@ -84,6 +84,7 @@ def eliminar(codigo_sai_sku: str, db: Session = Depends(get_db)):
 def movimientos_de_producto(codigo_sai_sku: str, db: Session = Depends(get_db)):
     return (
         db.query(MovimientoResguardo)
+        .options(joinedload(MovimientoResguardo.producto_ref), joinedload(MovimientoResguardo.empleado_ref))
         .filter(MovimientoResguardo.producto_sku == codigo_sai_sku)
         .order_by(MovimientoResguardo.fecha_movimiento.desc())
         .all()

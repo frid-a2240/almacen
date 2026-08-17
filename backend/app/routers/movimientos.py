@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models import MovimientoResguardo, Empleado, Producto
@@ -20,10 +20,21 @@ def _nuevo_row_id(db: Session) -> str:
     raise HTTPException(500, "No se pudo generar un Row ID único")
 
 
+def _con_referencias(query):
+    """MovimientoOut serializa `descripcion`/`nombre_de_empleado`, propiedades que
+    resuelven vía producto_ref/empleado_ref — sin precargarlas, cada fila dispara
+    2 consultas propias (N+1) al armar la respuesta: con ~3900 movimientos son
+    miles de consultas extra en cada listado."""
+    return query.options(
+        joinedload(MovimientoResguardo.producto_ref),
+        joinedload(MovimientoResguardo.empleado_ref),
+    )
+
+
 @router.get("/", response_model=list[MovimientoOut])
 def listar(db: Session = Depends(get_db)):
     return (
-        db.query(MovimientoResguardo)
+        _con_referencias(db.query(MovimientoResguardo))
         .order_by(MovimientoResguardo.fecha_movimiento.desc())
         .all()
     )
@@ -33,7 +44,7 @@ def listar(db: Session = Depends(get_db)):
 def reporte_salidas(db: Session = Depends(get_db)):
     """Vista REPORTE DE SALIDAS: bitácora filtrada a movimientos de tipo SALIDA."""
     return (
-        db.query(MovimientoResguardo)
+        _con_referencias(db.query(MovimientoResguardo))
         .filter(MovimientoResguardo.tipo_movimiento == "SALIDA")
         .order_by(MovimientoResguardo.fecha_movimiento.desc())
         .all()

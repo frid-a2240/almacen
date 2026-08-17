@@ -66,6 +66,12 @@ export default function ControlResguardoPage() {
   const [marcados, setMarcados] = useState(new Set())
   const [confirmarBorrado, setConfirmarBorrado] = useState(false)
 
+  // Empleados/productos/departamentos casi no cambian durante una sesión de
+  // captura — solo se piden una vez al entrar. Guardar/editar/borrar un
+  // movimiento vuelve a pedir nomás la lista de movimientos (antes se
+  // repetían las 4 listas completas en cada acción).
+  const refrescarMovimientos = () => listarMovimientos().then(setMovimientos)
+
   const cargar = () => {
     setCargando(true)
     Promise.all([listarMovimientos(), listarEmpleados(), listarProductos(), listarDepartamentos()])
@@ -103,7 +109,7 @@ export default function ControlResguardoPage() {
     await eliminarMovimiento(rowId)
     setAEliminar(null)
     if (seleccionado?.row_id === rowId) cerrarDetalle()
-    cargar()
+    refrescarMovimientos()
   }
 
   const toggleMarcado = (id) => {
@@ -123,7 +129,7 @@ export default function ControlResguardoPage() {
     await Promise.all([...marcados].map((id) => eliminarMovimiento(id)))
     setConfirmarBorrado(false)
     cancelarSeleccion()
-    cargar()
+    refrescarMovimientos()
   }
 
   return (
@@ -210,7 +216,7 @@ export default function ControlResguardoPage() {
         movimiento={editando}
         empleados={empleados}
         productos={productos}
-        onSaved={() => { setDialogoAbierto(false); cargar() }}
+        onSaved={() => { setDialogoAbierto(false); refrescarMovimientos() }}
       />
 
       <ConfirmDialog

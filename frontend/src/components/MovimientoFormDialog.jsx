@@ -59,10 +59,14 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
         })
         rowId = creado.row_id
       }
-      if (fotoVale) await subirFotoVale(rowId, fotoVale)
-      if (fotoProducto) await subirFotoProductoMovimiento(rowId, fotoProducto)
-      if (fotoNumeroSerie) await subirFotoNumeroSerie(rowId, fotoNumeroSerie)
-      if (firma) await subirFirma(rowId, firma)
+      // En paralelo — no hay dependencia entre ellas, y subirlas una por una
+      // sumaba varios segundos extra a cada guardado.
+      await Promise.all([
+        fotoVale && subirFotoVale(rowId, fotoVale),
+        fotoProducto && subirFotoProductoMovimiento(rowId, fotoProducto),
+        fotoNumeroSerie && subirFotoNumeroSerie(rowId, fotoNumeroSerie),
+        firma && subirFirma(rowId, firma),
+      ])
       onSaved(rowId)
     } finally {
       setGuardando(false)
