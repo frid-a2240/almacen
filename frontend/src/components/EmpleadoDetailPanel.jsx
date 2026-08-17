@@ -1,14 +1,27 @@
-import { IconButton } from '@mui/material'
+import { useState } from 'react'
+import { IconButton, Tooltip } from '@mui/material'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
 import { useNavigate } from 'react-router-dom'
 import DetailPanel from './DetailPanel.jsx'
 import RelatedTable from './RelatedTable.jsx'
 import { formatoFecha } from '../utils/formatters.js'
 import { columnasMovimientoCompletas } from '../config/movimientoColumns.jsx'
+import { descargarResguardoExcel } from '../api/empleados.js'
 
 export default function EmpleadoDetailPanel({ empleado, departamentos, movimientos, onEdit, onDelete, onClose }) {
   const navigate = useNavigate()
   const depto = departamentos.find((d) => d.id === empleado.departamento_id)
+  const [descargando, setDescargando] = useState(false)
+
+  const descargarResguardo = async () => {
+    setDescargando(true)
+    try {
+      await descargarResguardoExcel(empleado.id_numero_empleado)
+    } finally {
+      setDescargando(false)
+    }
+  }
 
   return (
     <DetailPanel
@@ -18,6 +31,15 @@ export default function EmpleadoDetailPanel({ empleado, departamentos, movimient
       onEdit={onEdit}
       onDelete={onDelete}
       onClose={onClose}
+      extraActions={
+        <Tooltip title="Descargar resguardo (Excel)">
+          <span>
+            <IconButton size="small" onClick={descargarResguardo} disabled={descargando} sx={{ color: 'text.secondary' }}>
+              <FileDownloadOutlinedIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+      }
       fields={[
         { label: 'Row ID', value: empleado.appsheet_row_id },
         { label: 'ID Numero Empleado', value: empleado.id_numero_empleado },

@@ -11,7 +11,7 @@ import DetailField from './DetailField.jsx'
  * todos los campos + secciones de registros relacionados pasadas como children).
  */
 export default function DetailPanel({
-  title, photo, photoShape = 'rounded', fields = [], onEdit, onDelete, onClose, children,
+  title, photo, photoShape = 'rounded', fields = [], onEdit, onDelete, onClose, extraActions, children,
 }) {
   return (
     <Box sx={{ height: '100%', overflowY: 'auto', bgcolor: 'background.default' }}>
@@ -23,7 +23,8 @@ export default function DetailPanel({
         }}
       >
         <Typography variant="h6" fontWeight={700} noWrap sx={{ mr: 2 }}>{title}</Typography>
-        <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+          {extraActions}
           {onDelete && (
             <IconButton size="small" onClick={onDelete} sx={{ color: 'text.secondary' }}>
               <DeleteOutlinedIcon fontSize="small" />
