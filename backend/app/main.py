@@ -2,6 +2,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 
@@ -27,6 +28,10 @@ api.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Listados como /movimientos/ pesan varios MB en JSON crudo (texto muy
+# repetitivo: nombres, status, rutas de foto) — comprime ~90%, y es la parte
+# que más se siente en Wi-Fi de tableta/oficina, más que el tiempo del server.
+api.add_middleware(GZipMiddleware, minimum_size=1000)
 
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 # El prefijo de URL siempre es "/uploads" (el frontend lo asume fijo en
