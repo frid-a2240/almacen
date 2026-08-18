@@ -30,14 +30,24 @@ client.interceptors.response.use(
   },
 )
 
-export function imageURL(rutaRelativa) {
-  if (!rutaRelativa) return null
+function esURLCompleta(rutaRelativa) {
   // blob:/data: son previsualizaciones locales (foto recién tomada, aún sin
   // subir) — ya son una URL completa, no se les debe anteponer la API.
-  if (rutaRelativa.startsWith('http') || rutaRelativa.startsWith('blob:') || rutaRelativa.startsWith('data:')) {
-    return rutaRelativa
-  }
+  return rutaRelativa.startsWith('http') || rutaRelativa.startsWith('blob:') || rutaRelativa.startsWith('data:')
+}
+
+export function imageURL(rutaRelativa) {
+  if (!rutaRelativa) return null
+  if (esURLCompleta(rutaRelativa)) return rutaRelativa
   return `${API_URL}/uploads/${rutaRelativa}`
+}
+
+// Versión chica (240px) para miniaturas en listas/avatares — mismo archivo,
+// pero sin bajar la foto a tamaño completo solo para verse en 56-180px.
+export function thumbURL(rutaRelativa) {
+  if (!rutaRelativa) return null
+  if (esURLCompleta(rutaRelativa)) return rutaRelativa
+  return `${API_URL}/thumb/${rutaRelativa}`
 }
 
 export default client

@@ -3,6 +3,7 @@ backend/venv/
 backend/venv312/
 backend/.env
 backend/uploads/
+backend/uploads_thumbs/
 **/__pycache__/
 *.pyc
 *.sql

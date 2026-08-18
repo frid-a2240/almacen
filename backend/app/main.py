@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 
 from app.config import settings
 from app.routers import departamentos, clases_familia, empleados, productos, movimientos, auth, usuarios
+from app.services.thumbnails import ruta_miniatura
 
 # Alias con el que esta app se cuelga de IIS: http://gacenssv03/almacen/
 # Debe coincidir con el `base` de frontend/vite.config.js y con el Alias
@@ -42,6 +43,21 @@ api.mount(
     StaticFiles(directory=settings.UPLOAD_DIR),
     name="uploads",
 )
+
+
+@api.get("/thumb/{ruta:path}", tags=["Salud"])
+def miniatura(ruta: str):
+    """Versión chica (240px) de una foto/firma, generada y cacheada la primera
+    vez que se pide — para listas con muchas filas (Control de Resguardo,
+    Productos, etc.) donde la original de 100+ KB por foto hacía lento el
+    scroll conforme se descargaban las que van entrando en pantalla."""
+    destino = ruta_miniatura(ruta)
+    if destino is None:
+        original = Path(settings.UPLOAD_DIR) / ruta
+        if not original.is_file():
+            raise HTTPException(404, "Archivo no encontrado")
+        return FileResponse(original)
+    return FileResponse(destino, headers={"Cache-Control": "public, max-age=604800"})
 
 
 @api.get("/", tags=["Salud"])

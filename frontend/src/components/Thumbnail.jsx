@@ -1,9 +1,9 @@
 import { Avatar } from '@mui/material'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
-import { imageURL } from '../api/client.js'
+import { thumbURL } from '../api/client.js'
 
 export default function Thumbnail({ src, shape = 'square', size = 56, bg }) {
-  const url = imageURL(src)
+  const url = thumbURL(src)
   return (
     <Avatar
       src={url || undefined}
