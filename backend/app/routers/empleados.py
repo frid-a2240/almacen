@@ -1,10 +1,7 @@
-from copy import copy as _copiar_estilo
 from io import BytesIO
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
-from openpyxl import load_workbook
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -13,6 +10,7 @@ from app.schemas.empleado import EmpleadoOut, EmpleadoCreate, EmpleadoUpdate
 from app.schemas.movimiento_resguardo import MovimientoOut
 from app.services.uploads import guardar_archivo
 from app.services.resguardo import resguardo_actual_de
+from app.services.inventario_excel import generar_inventario_xlsm
 from app.deps_auth import usuario_actual
 
 router = APIRouter(prefix="/empleados", tags=["Empleados"], dependencies=[Depends(usuario_actual)])
@@ -87,30 +85,6 @@ def movimientos_de_empleado(id_numero_empleado: str, db: Session = Depends(get_d
 
 
 
-# Se parte del archivo real que mandaron ("Copia de IMPRESION INVENTARIO
-# APPSHEET MCR (003).xlsm", copiado tal cual a templates/) en vez de armar el
-# Excel desde cero: así se conserva el diseño completo (logo, iconos, tarjeta
-# de "Costo Total", colores/rayas de la tabla) sin tener que reconstruirlo a
-# mano. Solo se escriben los datos en las celdas correctas; el resto del
-# archivo (imágenes, estilos, fórmulas de fecha/total) se queda como está.
-_PLANTILLA_INVENTARIO = Path(__file__).resolve().parent.parent / "templates" / "inventario_herramienta.xlsm"
-_ULTIMA_FILA_CON_FORMATO = 50  # hasta aquí la plantilla ya trae formato y fórmula de Costo Total listos
-
-
-def _asegurar_formato_fila(ws, r):
-    """Filas más allá de las 50 que ya trae la plantilla no tienen formato/
-    fórmula propios — se copian de la fila 50 antes de escribir el dato."""
-    if r <= _ULTIMA_FILA_CON_FORMATO:
-        return
-    for c in range(1, 11):
-        origen = ws.cell(row=_ULTIMA_FILA_CON_FORMATO, column=c)
-        destino = ws.cell(row=r, column=c)
-        destino.number_format = origen.number_format
-        destino.font = _copiar_estilo(origen.font)
-        destino.border = _copiar_estilo(origen.border)
-        destino.fill = _copiar_estilo(origen.fill)
-
-
 @router.get("/{id_numero_empleado}/resguardo-excel")
 def resguardo_excel(id_numero_empleado: str, db: Session = Depends(get_db)):
     emp = db.get(Empleado, id_numero_empleado)
@@ -118,43 +92,13 @@ def resguardo_excel(id_numero_empleado: str, db: Session = Depends(get_db)):
         raise HTTPException(404, "Empleado no encontrado")
 
     filas = resguardo_actual_de(db, id_numero_empleado)
-
-    wb = load_workbook(_PLANTILLA_INVENTARIO, keep_vba=True)
-    ws = wb.active
-
-    # D4/D5: las dos cajas con borde debajo del título — nombre completo +
-    # número de empleado en una, puesto en la otra. FECHA (F1) ya trae
-    # =TODAY() y el Total (I4) ya trae =SUM(Tabla5[...]) — no se tocan.
-    ws["D4"] = f"{emp.nombre_de_empleado} ({emp.id_numero_empleado})"
-    ws["D5"] = emp.puesto_posicion
-
-    for offset, f in enumerate(filas):
-        r = 8 + offset
-        _asegurar_formato_fila(ws, r)
-        ws.cell(row=r, column=1, value=f["fecha"])
-        ws.cell(row=r, column=2, value=f["numero_de_vale"])
-        ws.cell(row=r, column=3, value=f["sku"])
-        ws.cell(row=r, column=4, value=f["descripcion"])
-        ws.cell(row=r, column=5, value=f["udm"])
-        ws.cell(row=r, column=6, value=f["numero_economico"])
-        ws.cell(row=r, column=7, value=float(f["cantidad"]))
-        ws.cell(row=r, column=8, value=f["observaciones"])
-        costo = float(f["costo_unitario"]) if f["costo_unitario"] is not None else None
-        ws.cell(row=r, column=9, value=costo)
-        ws.cell(row=r, column=10, value=f"=I{r}*G{r}" if costo is not None else None)
-
-    # La tabla (Tabla5) trae de fábrica hasta la fila 50 con espacio de sobra
-    # para imprimir; si un empleado tiene más artículos que eso, se extiende.
-    ultima_fila = max(_ULTIMA_FILA_CON_FORMATO, 7 + len(filas))
-    ws.tables["Tabla5"].ref = f"A7:J{ultima_fila}"
-
-    buffer = BytesIO()
-    wb.save(buffer)
-    buffer.seek(0)
+    contenido = generar_inventario_xlsm(
+        emp.nombre_de_empleado, emp.id_numero_empleado, emp.puesto_posicion, filas,
+    )
 
     nombre_archivo = f"inventario_{id_numero_empleado}.xlsm"
     return StreamingResponse(
-        buffer,
+        BytesIO(contenido),
         media_type="application/vnd.ms-excel.sheet.macroEnabled.12",
         headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
     )
