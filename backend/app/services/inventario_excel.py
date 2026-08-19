@@ -107,12 +107,9 @@ def _set_numero(celda: ET.Element, numero):
     v_el.text = repr(float(numero)) if isinstance(numero, float) else str(numero)
 
 
-# Filas 8-50: ya vienen con estilo de fecha/moneda y la fórmula de Costo
-# Total lista en la plantilla, solo hace falta llenar los valores. Filas
-# 51-200 SÍ existen en la plantilla (el rango llega hasta A1:P200) pero
-# casi vacías — sin el estilo de fecha/moneda en A/I y sin fórmula en J —
-# así que ahí hay que ponérselos a mano.
-_ULTIMA_FILA_CON_FORMATO = 50
+# Ancho de fábrica de la tabla (Tabla5 = A7:J50) — si un empleado tiene más
+# artículos que eso, hay que extender el rango de la tabla.
+_ULTIMA_FILA_TABLA_PLANTILLA = 50
 
 
 def generar_inventario_xlsm(nombre_empleado: str, numero_empleado: str, puesto: str, filas: list[dict]) -> bytes:
@@ -151,12 +148,16 @@ def generar_inventario_xlsm(nombre_empleado: str, numero_empleado: str, puesto: 
             sheet_data.append(fila_el)
             filas_por_numero[num_fila] = fila_el
 
-        fuera_de_plantilla = num_fila > _ULTIMA_FILA_CON_FORMATO
-        estilo_fecha = "21" if fuera_de_plantilla else None
-        estilo_moneda = "27" if fuera_de_plantilla else None
-
+        # Estilo de fecha/moneda forzado siempre, sin importar si la celda
+        # ya existía en la plantilla: NO todas las filas 8-50 vienen con A/I
+        # pre-armadas por igual (algunas bandas, ej. 14-29, no traen celda A
+        # ni I en absoluto), así que confiar en "si ya existe, ya está bien"
+        # dejaba esas filas en formato general (se veía el número de serie
+        # de la fecha en vez de la fecha, y el costo sin signo de moneda).
         if f["fecha"]:
-            _set_numero(_celda(fila_el, "A", estilo_fecha), _serial_excel(f["fecha"]))
+            celda_a = _celda(fila_el, "A", "21")
+            celda_a.set("s", "21")
+            _set_numero(celda_a, _serial_excel(f["fecha"]))
         _set_texto(_celda(fila_el, "B"), f["numero_de_vale"])
         _set_texto(_celda(fila_el, "C"), f["sku"])
         _set_texto(_celda(fila_el, "D"), f["descripcion"])
@@ -165,18 +166,18 @@ def generar_inventario_xlsm(nombre_empleado: str, numero_empleado: str, puesto: 
         _set_numero(_celda(fila_el, "G"), float(f["cantidad"]))
         _set_texto(_celda(fila_el, "H"), f["observaciones"])
         costo = float(f["costo_unitario"]) if f["costo_unitario"] is not None else None
-        _set_numero(_celda(fila_el, "I", estilo_moneda), costo)
+        celda_i = _celda(fila_el, "I", "27")
+        celda_i.set("s", "27")
+        _set_numero(celda_i, costo)
 
-        celda_j = _celda(fila_el, "J", "15" if fuera_de_plantilla else None)
-        if fuera_de_plantilla:
-            # J51-J200 ya existían en la plantilla pero con un estilo
-            # genérico (no el de moneda) y sin fórmula — se fuerza el
-            # estilo aunque la celda ya existiera, y se agrega la fórmula
-            # (el grupo de fórmulas compartidas de Costo Total original
-            # solo llega hasta la fila 50).
-            celda_j.set("s", "15")
-            if celda_j.find(_q("f")) is None:
-                ET.SubElement(celda_j, _q("f")).text = f"I{num_fila}*G{num_fila}"
+        celda_j = _celda(fila_el, "J", "15")
+        celda_j.set("s", "15")
+        if celda_j.find(_q("f")) is None:
+            # Las filas que ya traían la fórmula de la plantilla (8-50) la
+            # conservan tal cual; las que no (51-200, fuera de lo que
+            # cubre el grupo de fórmulas compartidas original) reciben una
+            # normal con el mismo resultado.
+            ET.SubElement(celda_j, _q("f")).text = f"I{num_fila}*G{num_fila}"
 
     xml_hoja = ET.tostring(arbol_hoja, encoding="UTF-8", xml_declaration=False)
     xml_hoja = re.sub(rb"^<worksheet\b[^>]*>", etiqueta_raiz_original, xml_hoja, count=1)
@@ -184,8 +185,8 @@ def generar_inventario_xlsm(nombre_empleado: str, numero_empleado: str, puesto: 
     contenidos["xl/worksheets/sheet1.xml"] = xml_hoja
 
     # --- xl/tables/table1.xml: extender el rango si hubo más de 43 filas ---
-    ultima_fila_tabla = max(50, ultima_fila_usada)
-    if ultima_fila_tabla > 50:
+    ultima_fila_tabla = max(_ULTIMA_FILA_TABLA_PLANTILLA, ultima_fila_usada)
+    if ultima_fila_tabla > _ULTIMA_FILA_TABLA_PLANTILLA:
         xml_tabla = contenidos["xl/tables/table1.xml"].decode("utf-8")
         xml_tabla = xml_tabla.replace('ref="A7:J50"', f'ref="A7:J{ultima_fila_tabla}"')
         contenidos["xl/tables/table1.xml"] = xml_tabla.encode("utf-8")
