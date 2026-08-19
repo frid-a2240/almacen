@@ -11,6 +11,7 @@ datos) y xl/tables/table1.xml (el rango de la tabla) dentro del .zip,
 y copiando todo lo demás (dibujos, imágenes, macro) tal cual, el
 resultado sale idéntico a la plantilla original salvo por los datos.
 """
+import re
 import zipfile
 from datetime import date
 from io import BytesIO
@@ -120,7 +121,18 @@ def generar_inventario_xlsm(nombre_empleado: str, numero_empleado: str, puesto: 
         contenidos = {n: z.read(n) for n in nombres}
 
     # --- xl/worksheets/sheet1.xml: datos del empleado + tabla ---
-    arbol_hoja = ET.fromstring(contenidos["xl/worksheets/sheet1.xml"])
+    xml_original = contenidos["xl/worksheets/sheet1.xml"]
+    # ElementTree solo declara los xmlns que detecta en uso dentro del árbol
+    # — el original declara algunos (xr2, xr3) que aquí no se usan en
+    # ningún elemento propio, solo se mencionan dentro del texto plano de
+    # mc:Ignorable. Si se pierden esas declaraciones, Excel las rechaza
+    # como archivo corrupto. Más simple y seguro que perseguir eso vía
+    # ET: se guarda la etiqueta <worksheet ...> original tal cual y se
+    # vuelve a poner después de reserializar, en vez de confiar en que
+    # ElementTree la reconstruya igual.
+    etiqueta_raiz_original = re.search(rb"<worksheet\b[^>]*>", xml_original).group(0)
+
+    arbol_hoja = ET.fromstring(xml_original)
     sheet_data = arbol_hoja.find(_q("sheetData"))
     filas_por_numero = {int(f.get("r")): f for f in sheet_data.findall(_q("row"))}
 
@@ -166,9 +178,9 @@ def generar_inventario_xlsm(nombre_empleado: str, numero_empleado: str, puesto: 
             if celda_j.find(_q("f")) is None:
                 ET.SubElement(celda_j, _q("f")).text = f"I{num_fila}*G{num_fila}"
 
-    xml_hoja = b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + ET.tostring(
-        arbol_hoja, encoding="UTF-8", xml_declaration=False,
-    )
+    xml_hoja = ET.tostring(arbol_hoja, encoding="UTF-8", xml_declaration=False)
+    xml_hoja = re.sub(rb"^<worksheet\b[^>]*>", etiqueta_raiz_original, xml_hoja, count=1)
+    xml_hoja = b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xml_hoja
     contenidos["xl/worksheets/sheet1.xml"] = xml_hoja
 
     # --- xl/tables/table1.xml: extender el rango si hubo más de 43 filas ---
