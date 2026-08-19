@@ -1,11 +1,10 @@
-from datetime import date
+from copy import copy as _copiar_estilo
 from io import BytesIO
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
-from openpyxl import Workbook
-from openpyxl.styles import Font
-from openpyxl.utils import get_column_letter
+from openpyxl import load_workbook
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -88,20 +87,28 @@ def movimientos_de_empleado(id_numero_empleado: str, db: Session = Depends(get_d
 
 
 
-# Layout de la plantilla nueva "Copia de IMPRESION INVENTARIO APPSHEET MCR
-# (003).xlsm" (hoja "INVENTARIO PERSONAL") — reemplaza a la versión de 22
-# columnas: ya no trae departamento/jefe inmediato/status/clase-familia ni
-# columnas de foto/firma, solo lo esencial del vale. Se imprime y se firma a
-# mano, por eso no hay nada de fotos.
-_COLUMNAS_INVENTARIO = [
-    "FECHA ADQ.", "# VALE", "CODIGO SAI SKU", "DESCRIPCIÓN", "UDM",
-    "#ECONOM", "QTY", "OBSERVACIONES", "Costo Unitario", "Costo Total",
-]
-_ANCHOS_INVENTARIO = [12.9, 8.1, 19.0, 78.3, 9.3, 9.4, 9.4, 16.0, 10.4, 13.1]
-_FILA_ENCABEZADO = 7
-_FILA_PRIMER_DATO = 8
-_FORMATO_FECHA = "mm-dd-yy"
-_FORMATO_MONEDA = '"$"#,##0.00'
+# Se parte del archivo real que mandaron ("Copia de IMPRESION INVENTARIO
+# APPSHEET MCR (003).xlsm", copiado tal cual a templates/) en vez de armar el
+# Excel desde cero: así se conserva el diseño completo (logo, iconos, tarjeta
+# de "Costo Total", colores/rayas de la tabla) sin tener que reconstruirlo a
+# mano. Solo se escriben los datos en las celdas correctas; el resto del
+# archivo (imágenes, estilos, fórmulas de fecha/total) se queda como está.
+_PLANTILLA_INVENTARIO = Path(__file__).resolve().parent.parent / "templates" / "inventario_herramienta.xlsm"
+_ULTIMA_FILA_CON_FORMATO = 50  # hasta aquí la plantilla ya trae formato y fórmula de Costo Total listos
+
+
+def _asegurar_formato_fila(ws, r):
+    """Filas más allá de las 50 que ya trae la plantilla no tienen formato/
+    fórmula propios — se copian de la fila 50 antes de escribir el dato."""
+    if r <= _ULTIMA_FILA_CON_FORMATO:
+        return
+    for c in range(1, 11):
+        origen = ws.cell(row=_ULTIMA_FILA_CON_FORMATO, column=c)
+        destino = ws.cell(row=r, column=c)
+        destino.number_format = origen.number_format
+        destino.font = _copiar_estilo(origen.font)
+        destino.border = _copiar_estilo(origen.border)
+        destino.fill = _copiar_estilo(origen.fill)
 
 
 @router.get("/{id_numero_empleado}/resguardo-excel")
@@ -112,36 +119,19 @@ def resguardo_excel(id_numero_empleado: str, db: Session = Depends(get_db)):
 
     filas = resguardo_actual_de(db, id_numero_empleado)
 
-    wb = Workbook()
+    wb = load_workbook(_PLANTILLA_INVENTARIO, keep_vba=True)
     ws = wb.active
-    ws.title = "INVENTARIO PERSONAL"
 
-    negrita = Font(bold=True)
-
-    ws["D1"] = "INVENTARIO DE HERRAMIENTA"
-    ws["D1"].font = Font(bold=True, size=14)
-    # D4/D5: las dos cajas con borde debajo del título en la plantilla —
-    # nombre completo + número de empleado en una, puesto en la otra.
+    # D4/D5: las dos cajas con borde debajo del título — nombre completo +
+    # número de empleado en una, puesto en la otra. FECHA (F1) ya trae
+    # =TODAY() y el Total (I4) ya trae =SUM(Tabla5[...]) — no se tocan.
     ws["D4"] = f"{emp.nombre_de_empleado} ({emp.id_numero_empleado})"
     ws["D5"] = emp.puesto_posicion
 
-    ws["E1"] = "FECHA:"
-    ws["E1"].font = negrita
-    ws["F1"] = date.today()
-    ws["F1"].number_format = _FORMATO_FECHA
-
-    ws["I3"] = "Total :"
-    ws["I3"].font = negrita
-    ws["E4"] = "___________________________________________"
-    ws["E5"] = "FIRMA DE CONFORMIDAD"
-
-    for i, nombre in enumerate(_COLUMNAS_INVENTARIO, start=1):
-        celda = ws.cell(row=_FILA_ENCABEZADO, column=i, value=nombre)
-        celda.font = negrita
-
     for offset, f in enumerate(filas):
-        r = _FILA_PRIMER_DATO + offset
-        ws.cell(row=r, column=1, value=f["fecha"]).number_format = _FORMATO_FECHA
+        r = 8 + offset
+        _asegurar_formato_fila(ws, r)
+        ws.cell(row=r, column=1, value=f["fecha"])
         ws.cell(row=r, column=2, value=f["numero_de_vale"])
         ws.cell(row=r, column=3, value=f["sku"])
         ws.cell(row=r, column=4, value=f["descripcion"])
@@ -150,29 +140,22 @@ def resguardo_excel(id_numero_empleado: str, db: Session = Depends(get_db)):
         ws.cell(row=r, column=7, value=float(f["cantidad"]))
         ws.cell(row=r, column=8, value=f["observaciones"])
         costo = float(f["costo_unitario"]) if f["costo_unitario"] is not None else None
-        ws.cell(row=r, column=9, value=costo).number_format = _FORMATO_MONEDA
-        if costo is not None:
-            ws.cell(row=r, column=10, value=f"=I{r}*G{r}")
-            ws.cell(row=r, column=10).number_format = _FORMATO_MONEDA
+        ws.cell(row=r, column=9, value=costo)
+        ws.cell(row=r, column=10, value=f"=I{r}*G{r}" if costo is not None else None)
 
-    if filas:
-        ultima_fila = _FILA_PRIMER_DATO + len(filas) - 1
-        ws["I4"] = f"=SUM(J{_FILA_PRIMER_DATO}:J{ultima_fila})"
-    else:
-        ws["I4"] = 0
-    ws["I4"].number_format = _FORMATO_MONEDA
-
-    for i, ancho in enumerate(_ANCHOS_INVENTARIO, start=1):
-        ws.column_dimensions[get_column_letter(i)].width = ancho
+    # La tabla (Tabla5) trae de fábrica hasta la fila 50 con espacio de sobra
+    # para imprimir; si un empleado tiene más artículos que eso, se extiende.
+    ultima_fila = max(_ULTIMA_FILA_CON_FORMATO, 7 + len(filas))
+    ws.tables["Tabla5"].ref = f"A7:J{ultima_fila}"
 
     buffer = BytesIO()
     wb.save(buffer)
     buffer.seek(0)
 
-    nombre_archivo = f"inventario_{id_numero_empleado}.xlsx"
+    nombre_archivo = f"inventario_{id_numero_empleado}.xlsm"
     return StreamingResponse(
         buffer,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        media_type="application/vnd.ms-excel.sheet.macroEnabled.12",
         headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
     )
 

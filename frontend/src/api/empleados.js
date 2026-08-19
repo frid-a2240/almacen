@@ -17,7 +17,7 @@ export const descargarResguardoExcel = async (id) => {
   const url = URL.createObjectURL(respuesta.data)
   const enlace = document.createElement('a')
   enlace.href = url
-  enlace.download = `inventario_${id}.xlsx`
+  enlace.download = `inventario_${id}.xlsm`
   document.body.appendChild(enlace)
   enlace.click()
   enlace.remove()
