@@ -88,22 +88,20 @@ def movimientos_de_empleado(id_numero_empleado: str, db: Session = Depends(get_d
 
 
 
-# Mismas columnas/orden que la plantilla de AppSheet "IMPRESION INVENTARIO
-# APPSHEET MCR.xlsm" (hoja "INVENTARIO PERSONAL"). Los anchos también son los
-# de esa plantilla, salvo la columna S (FIRMA...) que ahí quedó con un ancho
-# de 255 — claramente un error de arrastre en el original, aquí se deja en
-# uno razonable. Las columnas de foto/firma (C, Q, R, S) quedan vacías, tal
-# como estaban en la plantilla (angostas/sin usar, no traía fotos incrustadas).
+# Layout de la plantilla nueva "Copia de IMPRESION INVENTARIO APPSHEET MCR
+# (003).xlsm" (hoja "INVENTARIO PERSONAL") — reemplaza a la versión de 22
+# columnas: ya no trae departamento/jefe inmediato/status/clase-familia ni
+# columnas de foto/firma, solo lo esencial del vale. Se imprime y se firma a
+# mano, por eso no hay nada de fotos.
 _COLUMNAS_INVENTARIO = [
-    "FECHA ADQ.", "# VALE", "FOTO VALE DE SALIDA", "TIPO MOVIMIENTO",
-    "ID NUMERO EMPLEADO", "NOMBRE DE EMPLEADO", "PUESTO / POSICION", "DEPARTAMENTO",
-    "JEFE INMEDIATO", "STATUS", "CODIGO SAI SKU", "DESCRIPCION", "UDM", "#ECONOM",
-    "CLASE / FAMILIA", "QTY", "FOTO PRODUCTO", "FOTO # NUMERO SERIE",
-    "FIRMA DE RECIBIDO Y CONFORMIDAD", "OBSERVACIONES", "Costo Unitario", "Costo Total",
+    "FECHA ADQ.", "# VALE", "CODIGO SAI SKU", "DESCRIPCIÓN", "UDM",
+    "#ECONOM", "QTY", "OBSERVACIONES", "Costo Unitario", "Costo Total",
 ]
-_ANCHOS_INVENTARIO = [12, 8.9, 0.3, 22, 24.4, 0.1, 20.9, 18.1, 20, 10, 18.4, 49.7, 7.9, 12.6, 17.7, 6.6, 1, 23.7, 40, 18.1, 12.7, 13.7]
+_ANCHOS_INVENTARIO = [12.9, 8.1, 19.0, 78.3, 9.3, 9.4, 9.4, 16.0, 10.4, 13.1]
 _FILA_ENCABEZADO = 7
 _FILA_PRIMER_DATO = 8
+_FORMATO_FECHA = "mm-dd-yy"
+_FORMATO_MONEDA = '"$"#,##0.00'
 
 
 @router.get("/{id_numero_empleado}/resguardo-excel")
@@ -113,7 +111,6 @@ def resguardo_excel(id_numero_empleado: str, db: Session = Depends(get_db)):
         raise HTTPException(404, "Empleado no encontrado")
 
     filas = resguardo_actual_de(db, id_numero_empleado)
-    depto = emp.departamento_ref.departamento if emp.departamento_ref else ""
 
     wb = Workbook()
     ws = wb.active
@@ -121,29 +118,22 @@ def resguardo_excel(id_numero_empleado: str, db: Session = Depends(get_db)):
 
     negrita = Font(bold=True)
 
-    ws["K1"] = "INVENTARIO DE HERRAMIENTA"
-    ws["K1"].font = Font(bold=True, size=14)
-    ws["M1"] = "FECHA:"
-    ws["M1"].font = negrita
-    ws["N1"] = date.today()
-    ws["N1"].number_format = "dd/mm/yyyy"
+    ws["D1"] = "INVENTARIO DE HERRAMIENTA"
+    ws["D1"].font = Font(bold=True, size=14)
+    # D4/D5: las dos cajas con borde debajo del título en la plantilla —
+    # nombre completo + número de empleado en una, puesto en la otra.
+    ws["D4"] = f"{emp.nombre_de_empleado} ({emp.id_numero_empleado})"
+    ws["D5"] = emp.puesto_posicion
 
-    ws["K2"] = "NOMBRE:"
-    ws["K2"].font = negrita
-    ws["L2"] = emp.nombre_de_empleado
-    ws["K3"] = "# EMPLEADO"
-    ws["K3"].font = negrita
-    ws["L3"] = emp.id_numero_empleado
-    ws["U3"] = "Total :"
-    ws["U3"].font = negrita
-    ws["K4"] = "PUESTO:"
-    ws["K4"].font = negrita
-    ws["L4"] = emp.puesto_posicion
-    ws["M4"] = "___________________________________________"
-    ws["K5"] = "ESTATUS:"
-    ws["K5"].font = negrita
-    ws["L5"] = emp.status_empleado
-    ws["M5"] = "FIRMA DE CONFORMIDAD"
+    ws["E1"] = "FECHA:"
+    ws["E1"].font = negrita
+    ws["F1"] = date.today()
+    ws["F1"].number_format = _FORMATO_FECHA
+
+    ws["I3"] = "Total :"
+    ws["I3"].font = negrita
+    ws["E4"] = "___________________________________________"
+    ws["E5"] = "FIRMA DE CONFORMIDAD"
 
     for i, nombre in enumerate(_COLUMNAS_INVENTARIO, start=1):
         celda = ws.cell(row=_FILA_ENCABEZADO, column=i, value=nombre)
@@ -151,34 +141,26 @@ def resguardo_excel(id_numero_empleado: str, db: Session = Depends(get_db)):
 
     for offset, f in enumerate(filas):
         r = _FILA_PRIMER_DATO + offset
-        ws.cell(row=r, column=1, value=f["fecha"]).number_format = "dd/mm/yyyy"
+        ws.cell(row=r, column=1, value=f["fecha"]).number_format = _FORMATO_FECHA
         ws.cell(row=r, column=2, value=f["numero_de_vale"])
-        # C (FOTO VALE DE SALIDA), Q (FOTO PRODUCTO), R (FOTO # NUMERO SERIE),
-        # S (FIRMA) quedan vacías — ver nota arriba.
-        ws.cell(row=r, column=4, value=f["tipo_movimiento"])
-        ws.cell(row=r, column=5, value=emp.id_numero_empleado)
-        ws.cell(row=r, column=6, value=emp.nombre_de_empleado)
-        ws.cell(row=r, column=7, value=emp.puesto_posicion)
-        ws.cell(row=r, column=8, value=depto)
-        ws.cell(row=r, column=9, value=emp.jefe_inmediato)
-        ws.cell(row=r, column=10, value=emp.status_empleado)
-        ws.cell(row=r, column=11, value=f["sku"])
-        ws.cell(row=r, column=12, value=f["descripcion"])
-        ws.cell(row=r, column=13, value=f["udm"])
-        ws.cell(row=r, column=14, value=f["numero_economico"])
-        ws.cell(row=r, column=15, value=f["clase_familia"])
-        ws.cell(row=r, column=16, value=float(f["cantidad"]))
-        ws.cell(row=r, column=20, value=f["observaciones"])
+        ws.cell(row=r, column=3, value=f["sku"])
+        ws.cell(row=r, column=4, value=f["descripcion"])
+        ws.cell(row=r, column=5, value=f["udm"])
+        ws.cell(row=r, column=6, value=f["numero_economico"])
+        ws.cell(row=r, column=7, value=float(f["cantidad"]))
+        ws.cell(row=r, column=8, value=f["observaciones"])
         costo = float(f["costo_unitario"]) if f["costo_unitario"] is not None else None
-        ws.cell(row=r, column=21, value=costo)
+        ws.cell(row=r, column=9, value=costo).number_format = _FORMATO_MONEDA
         if costo is not None:
-            ws.cell(row=r, column=22, value=f"=U{r}*P{r}")
+            ws.cell(row=r, column=10, value=f"=I{r}*G{r}")
+            ws.cell(row=r, column=10).number_format = _FORMATO_MONEDA
 
     if filas:
         ultima_fila = _FILA_PRIMER_DATO + len(filas) - 1
-        ws["U4"] = f"=SUM(V{_FILA_PRIMER_DATO}:V{ultima_fila})"
+        ws["I4"] = f"=SUM(J{_FILA_PRIMER_DATO}:J{ultima_fila})"
     else:
-        ws["U4"] = 0
+        ws["I4"] = 0
+    ws["I4"].number_format = _FORMATO_MONEDA
 
     for i, ancho in enumerate(_ANCHOS_INVENTARIO, start=1):
         ws.column_dimensions[get_column_letter(i)].width = ancho
