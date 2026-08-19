@@ -25,6 +25,13 @@ _PLANTILLA = Path(__file__).resolve().parent.parent / "templates" / "inventario_
 _NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 _NS_XML = "http://www.w3.org/XML/1998/namespace"
 
+# Todos los prefijos que aparecen en sheet1.xml Y en styles.xml (cada uno
+# usa un subconjunto distinto) — registrados con su nombre exacto para que,
+# si ElementTree detecta que de verdad hace falta declarar alguno al
+# reserializar, use el mismo prefijo que ya trae el archivo original (si
+# inventa uno propio tipo "ns0" y luego se le pega la etiqueta raíz
+# original encima, ese prefijo inventado queda sin declarar — archivo
+# corrupto).
 for _prefijo, _uri in {
     "": _NS_MAIN,
     "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
@@ -33,6 +40,8 @@ for _prefijo, _uri in {
     "xr": "http://schemas.microsoft.com/office/spreadsheetml/2014/revision",
     "xr2": "http://schemas.microsoft.com/office/spreadsheetml/2015/revision2",
     "xr3": "http://schemas.microsoft.com/office/spreadsheetml/2016/revision3",
+    "x16r2": "http://schemas.microsoft.com/office/spreadsheetml/2015/02/main",
+    "xr9": "http://schemas.microsoft.com/office/spreadsheetml/2016/revision9",
 }.items():
     ET.register_namespace(_prefijo, _uri)
 
@@ -183,6 +192,40 @@ def generar_inventario_xlsm(nombre_empleado: str, numero_empleado: str, puesto: 
     xml_hoja = re.sub(rb"^<worksheet\b[^>]*>", etiqueta_raiz_original, xml_hoja, count=1)
     xml_hoja = b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xml_hoja
     contenidos["xl/worksheets/sheet1.xml"] = xml_hoja
+
+    # --- xl/styles.xml: la fecha (estilo 21, el único que usan las celdas
+    # de FECHA ADQ.) usa el formato corto integrado de Excel (numFmtId 14),
+    # que se muestra mes/día/año u otro orden según el idioma/región de
+    # Windows de quien lo abra. Se agrega un formato propio explícito
+    # (día/mes/año) y se repunta el estilo 21 a ese, para que salga igual
+    # sin importar la configuración regional de cada quien. numFmtId=14 se
+    # usa en varios estilos más (6 en total) para otras cosas, así que hay
+    # que tocar solo el xf en la posición 21 dentro de <cellXfs>, no
+    # cualquiera que lo use — y esta vez por texto plano: styles.xml trae
+    # varios espacios de nombres (x16r2, xr9...) y reserializarlo entero
+    # con ElementTree los pierde/rompe (ya pasó con sheet1.xml, con menos
+    # prefijos de por medio). Editar el texto tal cual no corre ese riesgo.
+    xml_estilos = contenidos["xl/styles.xml"].decode("utf-8")
+
+    m_numfmts = re.search(r'<numFmts count="(\d+)">', xml_estilos)
+    xml_estilos = (
+        xml_estilos[: m_numfmts.start()]
+        + f'<numFmts count="{int(m_numfmts.group(1)) + 1}">'
+        + '<numFmt numFmtId="200" formatCode="dd/mm/yyyy"/>'
+        + xml_estilos[m_numfmts.end():]
+    )
+
+    m_cellxfs = re.search(r"<cellXfs count=\"\d+\">(.*?)</cellXfs>", xml_estilos, re.S)
+    cuerpo_cellxfs = m_cellxfs.group(1)
+    posiciones_xf = [m.start() for m in re.finditer(r"<xf\b", cuerpo_cellxfs)]
+    inicio_xf21 = posiciones_xf[21]
+    fin_xf21 = posiciones_xf[22] if len(posiciones_xf) > 22 else len(cuerpo_cellxfs)
+    xf21_original = cuerpo_cellxfs[inicio_xf21:fin_xf21]
+    xf21_nuevo = xf21_original.replace('numFmtId="14"', 'numFmtId="200"', 1)
+    cuerpo_cellxfs_nuevo = cuerpo_cellxfs[:inicio_xf21] + xf21_nuevo + cuerpo_cellxfs[fin_xf21:]
+    xml_estilos = xml_estilos[: m_cellxfs.start(1)] + cuerpo_cellxfs_nuevo + xml_estilos[m_cellxfs.end(1):]
+
+    contenidos["xl/styles.xml"] = xml_estilos.encode("utf-8")
 
     # --- xl/tables/table1.xml: extender el rango si hubo más de 43 filas ---
     ultima_fila_tabla = max(_ULTIMA_FILA_TABLA_PLANTILLA, ultima_fila_usada)
