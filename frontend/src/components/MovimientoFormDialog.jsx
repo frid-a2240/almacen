@@ -160,7 +160,11 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
 
           <CampoFoto
             label="Foto Producto"
-            thumb={fotoProducto ? URL.createObjectURL(fotoProducto) : movimiento?.foto_producto_snapshot}
+            thumb={
+              fotoProducto
+                ? URL.createObjectURL(fotoProducto)
+                : movimiento?.foto_producto_snapshot || productoSel?.foto_producto
+            }
             onChange={setFotoProducto}
           />
           <CampoFoto

@@ -17,3 +17,15 @@ export const subirScanProducto = (sku, archivo) => {
   form.append('archivo', archivo)
   return client.post(`/productos/${sku}/scan`, form).then((r) => r.data)
 }
+
+export const descargarAsignadosExcel = async (sku) => {
+  const respuesta = await client.get(`/productos/${sku}/asignados-excel`, { responseType: 'blob' })
+  const url = URL.createObjectURL(respuesta.data)
+  const enlace = document.createElement('a')
+  enlace.href = url
+  enlace.download = `asignados_${sku}.xlsx`
+  document.body.appendChild(enlace)
+  enlace.click()
+  enlace.remove()
+  URL.revokeObjectURL(url)
+}

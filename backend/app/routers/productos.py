@@ -1,4 +1,7 @@
+from io import BytesIO
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session, joinedload
 
@@ -8,6 +11,8 @@ from app.schemas.producto import ProductoOut, ProductoCreate, ProductoUpdate
 from app.schemas.movimiento_resguardo import MovimientoOut
 from app.services.uploads import guardar_archivo
 from app.services.stock import stock_subquery, stock_de
+from app.services.resguardo import tenedores_actuales_de
+from app.services.asignados_excel import generar_asignados_excel
 from app.deps_auth import usuario_actual
 
 router = APIRouter(prefix="/productos", tags=["Productos"], dependencies=[Depends(usuario_actual)])
@@ -88,6 +93,23 @@ def movimientos_de_producto(codigo_sai_sku: str, db: Session = Depends(get_db)):
         .filter(MovimientoResguardo.producto_sku == codigo_sai_sku)
         .order_by(MovimientoResguardo.fecha_movimiento.desc())
         .all()
+    )
+
+
+@router.get("/{codigo_sai_sku}/asignados-excel")
+def asignados_excel(codigo_sai_sku: str, db: Session = Depends(get_db)):
+    prod = db.get(Producto, codigo_sai_sku)
+    if not prod:
+        raise HTTPException(404, "Producto no encontrado")
+
+    filas = tenedores_actuales_de(db, codigo_sai_sku)
+    contenido = generar_asignados_excel(prod.descripcion, codigo_sai_sku, filas)
+
+    nombre_archivo = f"asignados_{codigo_sai_sku}.xlsx"
+    return StreamingResponse(
+        BytesIO(contenido),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
     )
 
 

@@ -91,6 +91,10 @@ def crear(datos: MovimientoCreate, db: Session = Depends(get_db)):
         clase_familia=producto.clase_familia_ref.clase_familia if producto.clase_familia_ref else None,
         costo_unitario=producto.costo_unitario,
         cantidad=datos.cantidad,
+        # Si la herramienta ya tiene foto de referencia (de un resguardo anterior
+        # o capturada en su ficha), se reusa aquí para no obligar a retomarla en
+        # cada salida — se sobreescribe más abajo si en este vale sí se sube una.
+        foto_producto_snapshot=producto.foto_producto,
         observaciones=datos.observaciones,
     )
     db.add(mov)
@@ -138,7 +142,15 @@ def subir_foto_vale(row_id: str, archivo: UploadFile = File(...), db: Session = 
 
 @router.post("/{row_id}/foto-producto", response_model=MovimientoOut)
 def subir_foto_producto(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db)):
-    return _subir(row_id, db, archivo, "foto_producto_snapshot", "FOTO_PRODUCTO")
+    mov = _subir(row_id, db, archivo, "foto_producto_snapshot", "FOTO_PRODUCTO")
+    # Primera foto real de esta herramienta: queda también como su foto de
+    # referencia, para que la próxima salida ya no la pida de nuevo (no se
+    # sobreescribe si el producto ya tenía una).
+    if mov.producto_ref is not None and not mov.producto_ref.foto_producto:
+        mov.producto_ref.foto_producto = mov.foto_producto_snapshot
+        db.commit()
+        db.refresh(mov)
+    return mov
 
 
 @router.post("/{row_id}/foto-numero-serie", response_model=MovimientoOut)

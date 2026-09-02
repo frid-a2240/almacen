@@ -56,3 +56,51 @@ def resguardo_actual_de(db: Session, empleado_id: str):
     ]
     filas.sort(key=lambda f: f["fecha"] or date.min, reverse=True)
     return filas
+
+
+def tenedores_actuales_de(db: Session, codigo_sai_sku: str):
+    """Quién tiene actualmente asignada una herramienta: mismo criterio que
+    resguardo_actual_de pero mirado al revés — se agrupa por empleado en vez
+    de por producto, para un solo producto (puede haber varios empleados con
+    saldo positivo si hay más de una unidad en stock)."""
+    m = MovimientoResguardo
+    clave = func.coalesce(m.producto_sku, m.codigo_sai_sku)
+
+    salida = func.coalesce(func.sum(case((m.tipo_movimiento == "SALIDA", m.cantidad), else_=0)), 0)
+    entrada = func.coalesce(func.sum(case((m.tipo_movimiento == "ENTRADA", m.cantidad), else_=0)), 0)
+    saldos = {
+        fila.empleado_id: fila.cantidad
+        for fila in (
+            db.query(m.empleado_id, (salida - entrada).label("cantidad"))
+            .filter(clave == codigo_sai_sku, m.empleado_id.isnot(None))
+            .group_by(m.empleado_id)
+            .having(salida - entrada > 0)
+            .all()
+        )
+    }
+    if not saldos:
+        return []
+
+    ultimas_salidas = (
+        db.query(m)
+        .filter(m.empleado_id.in_(saldos.keys()), clave == codigo_sai_sku, m.tipo_movimiento == "SALIDA")
+        .order_by(m.empleado_id, desc(m.fecha_movimiento), desc(m.row_id))
+        .distinct(m.empleado_id)
+        .all()
+    )
+
+    filas = [
+        {
+            "empleado_id": mov.empleado_id,
+            "nombre_de_empleado": mov.nombre_de_empleado,
+            "puesto_posicion": mov.puesto_posicion,
+            "departamento": mov.departamento,
+            "fecha": mov.fecha_movimiento,
+            "numero_de_vale": mov.numero_de_vale,
+            "cantidad": saldos[mov.empleado_id],
+            "observaciones": mov.observaciones,
+        }
+        for mov in ultimas_salidas
+    ]
+    filas.sort(key=lambda f: f["fecha"] or date.min, reverse=True)
+    return filas

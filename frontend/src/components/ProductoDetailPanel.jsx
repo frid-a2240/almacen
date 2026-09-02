@@ -1,17 +1,30 @@
-import { Box, IconButton, Link } from '@mui/material'
+import { useState } from 'react'
+import { Box, IconButton, Link, Tooltip } from '@mui/material'
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
 import { useNavigate } from 'react-router-dom'
 import DetailPanel from './DetailPanel.jsx'
 import RelatedTable from './RelatedTable.jsx'
 import { imageURL } from '../api/client.js'
+import { descargarAsignadosExcel } from '../api/productos.js'
 import { formatoFecha, formatoMoneda } from '../utils/formatters.js'
 import { columnasMovimientoCompletas } from '../config/movimientoColumns.jsx'
 
 export default function ProductoDetailPanel({ producto, clases, movimientos, onEdit, onDelete, onClose }) {
   const navigate = useNavigate()
   const clase = clases.find((c) => c.id === producto.clase_familia_id)
+  const [descargando, setDescargando] = useState(false)
+
+  const descargarAsignados = async () => {
+    setDescargando(true)
+    try {
+      await descargarAsignadosExcel(producto.codigo_sai_sku)
+    } finally {
+      setDescargando(false)
+    }
+  }
 
   return (
     <DetailPanel
@@ -20,6 +33,15 @@ export default function ProductoDetailPanel({ producto, clases, movimientos, onE
       onEdit={onEdit}
       onDelete={onDelete}
       onClose={onClose}
+      extraActions={
+        <Tooltip title="Descargar quién la tiene asignada (Excel)">
+          <span>
+            <IconButton size="small" onClick={descargarAsignados} disabled={descargando} sx={{ color: 'text.secondary' }}>
+              <FileDownloadOutlinedIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+      }
       fields={[
         { label: 'Row ID', value: producto.appsheet_row_id },
         { label: 'Tool Id', value: producto.tool_id },
