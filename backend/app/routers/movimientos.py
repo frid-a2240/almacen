@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models import MovimientoResguardo, Empleado, Producto
 from app.schemas.movimiento_resguardo import MovimientoOut, MovimientoCreate, MovimientoUpdate
 from app.services.uploads import guardar_archivo
+from app.services.folio import siguiente_folio
 from app.deps_auth import usuario_actual
 
 router = APIRouter(prefix="/movimientos", tags=["Control de Resguardo"], dependencies=[Depends(usuario_actual)])
@@ -71,10 +72,17 @@ def crear(datos: MovimientoCreate, db: Session = Depends(get_db)):
     if not producto:
         raise HTTPException(404, "Producto no encontrado")
 
+    # El folio del vale electrónico se asigna solo (consecutivo) cuando es una
+    # SALIDA nueva y no se mandó uno a mano — así el vale sale listo para
+    # imprimir sin que nadie tenga que capturarlo.
+    numero_de_vale = datos.numero_de_vale
+    if not numero_de_vale and datos.tipo_movimiento == "SALIDA":
+        numero_de_vale = siguiente_folio(db)
+
     mov = MovimientoResguardo(
         row_id=_nuevo_row_id(db),
         fecha_movimiento=datos.fecha_movimiento,
-        numero_de_vale=datos.numero_de_vale,
+        numero_de_vale=numero_de_vale,
         tipo_movimiento=datos.tipo_movimiento,
         id_numero_empleado=empleado.id_numero_empleado,
         empleado_id=empleado.id_numero_empleado,

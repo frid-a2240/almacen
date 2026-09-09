@@ -2,6 +2,7 @@ import client from './client.js'
 
 export const listarMovimientos = () => client.get('/movimientos/').then((r) => r.data)
 export const listarReporteSalidas = () => client.get('/movimientos/reporte-salidas').then((r) => r.data)
+export const obtenerMovimiento = (rowId) => client.get(`/movimientos/${rowId}`).then((r) => r.data)
 export const crearMovimiento = (datos) => client.post('/movimientos/', datos).then((r) => r.data)
 export const actualizarMovimiento = (rowId, datos) => client.put(`/movimientos/${rowId}`, datos).then((r) => r.data)
 export const eliminarMovimiento = (rowId) => client.delete(`/movimientos/${rowId}`)

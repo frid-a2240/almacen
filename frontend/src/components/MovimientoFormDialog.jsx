@@ -7,9 +7,11 @@ import dayjs from 'dayjs'
 import CampoFoto from './CampoFoto.jsx'
 import SignaturePad from './SignaturePad.jsx'
 import {
-  crearMovimiento, actualizarMovimiento,
+  crearMovimiento, actualizarMovimiento, obtenerMovimiento,
   subirFotoVale, subirFotoProductoMovimiento, subirFotoNumeroSerie, subirFirma,
 } from '../api/movimientos.js'
+import { generarValeHtml } from '../utils/valeHtml.js'
+import { imprimirHtml } from '../utils/imprimir.js'
 
 const VACIO = {
   fecha_movimiento: dayjs().format('YYYY-MM-DD'), numero_de_vale: '', tipo_movimiento: 'SALIDA',
@@ -49,6 +51,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
     setGuardando(true)
     try {
       let rowId = movimiento?.row_id
+      const esNuevo = !movimiento
       if (movimiento) {
         await actualizarMovimiento(rowId, form)
       } else {
@@ -67,6 +70,15 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
         fotoNumeroSerie && subirFotoNumeroSerie(rowId, fotoNumeroSerie),
         firma && subirFirma(rowId, firma),
       ])
+
+      // El vale electrónico (con folio consecutivo) solo aplica a una SALIDA
+      // nueva — es el comprobante que se entrega al sacar la herramienta, no
+      // algo que se vuelva a imprimir al editar o al registrar una ENTRADA.
+      if (esNuevo && form.tipo_movimiento === 'SALIDA') {
+        const final = await obtenerMovimiento(rowId)
+        imprimirHtml(generarValeHtml(final), `vale_${final.numero_de_vale}`)
+      }
+
       onSaved(rowId)
     } finally {
       setGuardando(false)
@@ -89,6 +101,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
             label="Número de vale" fullWidth
             value={form.numero_de_vale}
             onChange={(e) => setForm({ ...form, numero_de_vale: e.target.value })}
+            helperText={!movimiento ? 'En blanco: se asigna solo al guardar (folio consecutivo del vale electrónico)' : undefined}
           />
 
           <CampoFoto

@@ -7,8 +7,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 
 from app.config import settings
+from app.database import engine
 from app.routers import departamentos, clases_familia, empleados, productos, movimientos, auth, usuarios
 from app.services.thumbnails import ruta_miniatura
+from app.services.folio import asegurar_secuencia
 
 # Alias con el que esta app se cuelga de IIS: http://gacenssv03/almacen/
 # Debe coincidir con el `base` de frontend/vite.config.js y con el Alias
@@ -35,6 +37,7 @@ api.add_middleware(
 api.add_middleware(GZipMiddleware, minimum_size=1000)
 
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+asegurar_secuencia(engine)
 # El prefijo de URL siempre es "/uploads" (el frontend lo asume fijo en
 # imageURL()), sin importar el valor de UPLOAD_DIR — que en el servidor es
 # una ruta absoluta de disco (D:\...\uploads), no algo usable como URL.
