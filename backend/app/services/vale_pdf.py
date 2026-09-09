@@ -74,12 +74,13 @@ def _campos_copia(c, m, delta):
     # "Empleado:") en el PDF original — se tapa y se redibuja en una sola
     # línea, con el número debajo, centrado en su propio recuadro.
     _borrar(c, 27, 62 + d, 116, 82 + d)
-    _texto(c, 29, 71 + d, "No. de Empleado:", size=6, max_width=85, size_min=4.5)
-    _texto(c, 71.7, 80 + d, m.get("id_numero_empleado"), size=7, bold=True, center=True)
+    _texto(c, 29, 71 + d, "No. de Empleado:", size=7.5, max_width=85, size_min=6)
+    _texto(c, 71.7, 79 + d, m.get("id_numero_empleado"), size=7, bold=True, center=True)
     # Nombre Completo: el valor va justo debajo de su etiqueta, alineado a la
     # misma posición horizontal — con todo el ancho de la celda disponible
-    # no hace falta reducir la letra.
-    _texto(c, 259, 81 + d, m.get("nombre_de_empleado"), size=7, max_width=155, size_min=5)
+    # no hace falta reducir la letra. El renglón sube un poco (79 en vez de
+    # 81) para no rozar la línea de la celda que viene justo debajo (82.3).
+    _texto(c, 259, 79 + d, m.get("nombre_de_empleado"), size=7, max_width=155, size_min=5)
     _texto(c, 468, 71 + d, m.get("puesto_posicion"), size=7, max_width=115)
 
     # Proyecto o Área de Trabajo (=Departamento) / Nombre del Supervisor —
