@@ -28,14 +28,22 @@ def _y(top):
     return _ALTO_PAGINA - top
 
 
-def _texto(c, x, top, texto, size=8, bold=False, center=False, max_width=None):
+def _texto(c, x, top, texto, size=8, bold=False, center=False, max_width=None, size_min=None):
+    """Dibuja texto; si no cabe en max_width, primero reduce el tamaño de
+    letra (hasta size_min, cuando se da) para no perder ninguna letra —
+    solo trunca si ni con la letra más chica permitida cabe."""
     if not texto:
         return
     texto = str(texto)
-    c.setFont("Helvetica-Bold" if bold else "Helvetica", size)
+    fuente = "Helvetica-Bold" if bold else "Helvetica"
     if max_width:
-        while texto and c.stringWidth(texto, "Helvetica-Bold" if bold else "Helvetica", size) > max_width:
+        tam = size
+        while size_min and tam > size_min and c.stringWidth(texto, fuente, tam) > max_width:
+            tam -= 0.2
+        size = tam
+        while texto and c.stringWidth(texto, fuente, size) > max_width:
             texto = texto[:-1]
+    c.setFont(fuente, size)
     if center:
         c.drawCentredString(x, _y(top), texto)
     else:
@@ -56,9 +64,10 @@ def _campos_copia(c, m, delta):
 
     # No. de Empleado: en su propio recuadro, a la derecha de "Empleado:".
     _texto(c, 98, 80 + d, m.get("id_numero_empleado"), size=6.5, bold=True, center=True)
-    # Nombre Completo: la etiqueta va a la mitad de la celda — el valor va en
-    # el renglón de abajo, con todo el ancho de la celda disponible.
-    _texto(c, 122, 81 + d, m.get("nombre_de_empleado"), size=6.5, max_width=290)
+    # Nombre Completo: misma línea que su propia etiqueta, justo después de
+    # "Completo:" — el espacio es angosto (label termina casi al borde de la
+    # celda), así que reduce la letra en vez de cortar el nombre.
+    _texto(c, 354, 71 + d, m.get("nombre_de_empleado"), size=7, max_width=63, size_min=4.5)
     _texto(c, 468, 71 + d, m.get("puesto_posicion"), size=7, max_width=115)
 
     # Proyecto o Área de Trabajo (=Departamento) / Nombre del Supervisor —
