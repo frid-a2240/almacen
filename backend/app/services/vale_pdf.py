@@ -15,11 +15,23 @@ from pathlib import Path
 
 from pypdf import PdfReader, PdfWriter
 from reportlab.lib.colors import black, white
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 _PLANTILLA = Path(__file__).resolve().parent.parent / "templates" / "vale_equipo_herramienta.pdf"
 _ALTO_PAGINA = 792.0
 _DELTA_COPIA_2 = 387.7  # distancia vertical entre la copia 1 y la copia 2 (medida sobre "VALE" del título de ambas)
+
+# Mismo tipo de letra que usa la plantilla ("Mont Book") — el .otf original
+# tiene contornos PostScript que reportlab no soporta, así que se usa una
+# conversión a contornos TrueType (backend/app/assets/fonts), hecha una sola
+# vez con otf2ttf; no hay variante negrita disponible, se usa la misma para
+# todo el texto.
+_FUENTE = "MontBook"
+pdfmetrics.registerFont(
+    TTFont(_FUENTE, str(Path(__file__).resolve().parent.parent / "assets" / "fonts" / "Mont-Book.ttf"))
+)
 
 
 def _y(top):
@@ -28,22 +40,21 @@ def _y(top):
     return _ALTO_PAGINA - top
 
 
-def _texto(c, x, top, texto, size=8, bold=False, center=False, max_width=None, size_min=None):
+def _texto(c, x, top, texto, size=8, center=False, max_width=None, size_min=None):
     """Dibuja texto; si no cabe en max_width, primero reduce el tamaño de
     letra (hasta size_min, cuando se da) para no perder ninguna letra —
     solo trunca si ni con la letra más chica permitida cabe."""
     if not texto:
         return
     texto = str(texto)
-    fuente = "Helvetica-Bold" if bold else "Helvetica"
     if max_width:
         tam = size
-        while size_min and tam > size_min and c.stringWidth(texto, fuente, tam) > max_width:
+        while size_min and tam > size_min and c.stringWidth(texto, _FUENTE, tam) > max_width:
             tam -= 0.2
         size = tam
-        while texto and c.stringWidth(texto, fuente, size) > max_width:
+        while texto and c.stringWidth(texto, _FUENTE, size) > max_width:
             texto = texto[:-1]
-    c.setFont(fuente, size)
+    c.setFont(_FUENTE, size)
     if center:
         c.drawCentredString(x, _y(top), texto)
     else:
@@ -68,14 +79,15 @@ def _campos_copia(c, m, delta):
     _texto(c, 430, 60 + d, fecha_str, size=6.5)
     # Folio / No.: celda ancha a la derecha, con toda la altura de las 3
     # primeras filas disponible, debajo del encabezado "No." en rojo.
-    _texto(c, 558, 58 + d, str(m.get("numero_de_vale") or ""), size=14, bold=True, center=True)
+    _texto(c, 558, 58 + d, str(m.get("numero_de_vale") or ""), size=14, center=True)
 
     # No. de Empleado: la etiqueta viene partida en dos líneas ("No. de" /
-    # "Empleado:") en el PDF original — se tapa y se redibuja en una sola
-    # línea, con el número debajo, centrado en su propio recuadro.
+    # "Empleado:") en el PDF original — se tapa y se redibuja junto con el
+    # número, los dos en una sola línea (como el resto de los campos).
     _borrar(c, 27, 62 + d, 116, 82 + d)
-    _texto(c, 29, 71 + d, "No. de Empleado:", size=7.5, max_width=85, size_min=6)
-    _texto(c, 71.7, 79 + d, m.get("id_numero_empleado"), size=7, bold=True, center=True)
+    numero_empleado = m.get("id_numero_empleado")
+    etiqueta_empleado = f"No. de Empleado: {numero_empleado}" if numero_empleado else "No. de Empleado:"
+    _texto(c, 29, 71 + d, etiqueta_empleado, size=7, max_width=85, size_min=6)
     # Nombre Completo: el valor va justo debajo de su etiqueta, alineado a la
     # misma posición horizontal — con todo el ancho de la celda disponible
     # no hace falta reducir la letra. El renglón sube un poco (79 en vez de
