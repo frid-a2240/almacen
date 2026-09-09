@@ -19,7 +19,7 @@ from reportlab.pdfgen import canvas
 
 _PLANTILLA = Path(__file__).resolve().parent.parent / "templates" / "vale_equipo_herramienta.pdf"
 _ALTO_PAGINA = 792.0
-_DELTA_COPIA_2 = 386.7  # distancia vertical entre la copia 1 y la copia 2 (medida sobre el logo de ambas)
+_DELTA_COPIA_2 = 387.7  # distancia vertical entre la copia 1 y la copia 2 (medida sobre "VALE" del título de ambas)
 
 
 def _y(top):
@@ -47,40 +47,30 @@ def _campos_copia(c, m, delta):
     fecha = m["fecha_movimiento"]
     fecha_str = fecha.strftime("%d/%m/%Y") if isinstance(fecha, date) else (fecha or "")
 
-    # Fecha de Entrega: la etiqueta ocupa casi toda la celda angosta (2
-    # líneas) — el valor va debajo, apretado.
-    _texto(c, 422, 58 + d, fecha_str, size=6.5)
+    # Fecha de Entrega: la etiqueta ("Fecha"/"de"/"Entrega"/":") ocupa las 4
+    # líneas de la celda — el valor va en la misma línea de ":", a su derecha.
+    _texto(c, 430, 60 + d, fecha_str, size=6.5)
     # Folio / No.: celda ancha a la derecha, con toda la altura de las 3
-    # primeras filas disponible.
-    _texto(c, 558, 57 + d, str(m.get("numero_de_vale") or ""), size=14, bold=True, center=True)
+    # primeras filas disponible, debajo del encabezado "No." en rojo.
+    _texto(c, 558, 58 + d, str(m.get("numero_de_vale") or ""), size=14, bold=True, center=True)
 
-    # No. de Empleado / Nombre Completo / Puesto — una sola línea. "No. de
-    # Empleado:" no deja espacio propio en la plantilla (su etiqueta llega
-    # justo hasta donde arranca "Nombre Completo:"), así que el número de
-    # empleado se agrega entre paréntesis junto al nombre en vez de
-    # encimarse con la etiqueta.
-    nombre_con_numero = m.get("nombre_de_empleado") or ""
-    if m.get("id_numero_empleado"):
-        nombre_con_numero = f"{nombre_con_numero} ({m['id_numero_empleado']})"
-    _texto(c, 250, 72 + d, nombre_con_numero, size=7.2, max_width=163)
-    _texto(c, 470, 72 + d, m.get("puesto_posicion"), size=7, max_width=112)
+    # No. de Empleado: en su propio recuadro, a la derecha de "Empleado:".
+    _texto(c, 98, 80 + d, m.get("id_numero_empleado"), size=6.5, bold=True, center=True)
+    # Nombre Completo: la etiqueta va a la mitad de la celda — el valor va en
+    # el renglón de abajo, con todo el ancho de la celda disponible.
+    _texto(c, 122, 81 + d, m.get("nombre_de_empleado"), size=6.5, max_width=290)
+    _texto(c, 468, 71 + d, m.get("puesto_posicion"), size=7, max_width=115)
 
-    # Proyecto o Área de Trabajo (=Departamento) / Nombre del Supervisor
-    _texto(c, 178, 87 + d, m.get("departamento"), size=7.5, max_width=150)
-    _texto(c, 461, 87 + d, m.get("jefe_inmediato"), size=7, max_width=120)
+    # Proyecto o Área de Trabajo (=Departamento) / Nombre del Supervisor —
+    # valor en la misma línea, a la derecha de cada etiqueta.
+    _texto(c, 189, 92 + d, m.get("departamento"), size=7.5, max_width=140)
+    _texto(c, 468, 92 + d, m.get("jefe_inmediato"), size=7, max_width=115)
 
     # Primer (y único, por ahora) renglón de herramienta de la tabla
-    fila_y = 130 + d
+    fila_y = 139 + d
     _texto(c, 42, fila_y, m.get("cantidad"), size=7, center=True)
     _texto(c, 87, fila_y, m.get("numero_economico"), size=6.5, center=True)
-    _texto(c, 122, fila_y, m.get("descripcion"), size=6.5, max_width=200)
-
-    firma = m.get("firma_recibido_conformidad_path")
-    if firma:
-        try:
-            c.drawImage(firma, 210, _y(268 + d), width=195, height=38, preserveAspectRatio=True, mask="auto")
-        except Exception:
-            pass
+    _texto(c, 122, fila_y, m.get("descripcion"), size=6.5, max_width=260)
 
 
 def generar_vale_pdf(movimiento: dict) -> bytes:
