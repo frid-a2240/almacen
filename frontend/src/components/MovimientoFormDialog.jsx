@@ -7,11 +7,10 @@ import dayjs from 'dayjs'
 import CampoFoto from './CampoFoto.jsx'
 import SignaturePad from './SignaturePad.jsx'
 import {
-  crearMovimiento, actualizarMovimiento, obtenerMovimiento,
+  crearMovimiento, actualizarMovimiento, obtenerValePdf,
   subirFotoVale, subirFotoProductoMovimiento, subirFotoNumeroSerie, subirFirma,
 } from '../api/movimientos.js'
-import { generarValeHtml } from '../utils/valeHtml.js'
-import { imprimirHtml } from '../utils/imprimir.js'
+import { imprimirPdf } from '../utils/imprimir.js'
 
 const VACIO = {
   fecha_movimiento: dayjs().format('YYYY-MM-DD'), numero_de_vale: '', tipo_movimiento: 'SALIDA',
@@ -74,9 +73,10 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       // El vale electrónico (con folio consecutivo) solo aplica a una SALIDA
       // nueva — es el comprobante que se entrega al sacar la herramienta, no
       // algo que se vuelva a imprimir al editar o al registrar una ENTRADA.
+      // Se arma en el backend sobre la plantilla real (PDF), no se recrea acá.
       if (esNuevo && form.tipo_movimiento === 'SALIDA') {
-        const final = await obtenerMovimiento(rowId)
-        imprimirHtml(generarValeHtml(final), `vale_${final.numero_de_vale}`)
+        const pdf = await obtenerValePdf(rowId)
+        imprimirPdf(pdf, `vale_${rowId}`)
       }
 
       onSaved(rowId)

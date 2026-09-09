@@ -1,13 +1,18 @@
 import uuid
+from io import BytesIO
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
+from app.config import settings
 from app.database import get_db
 from app.models import MovimientoResguardo, Empleado, Producto
 from app.schemas.movimiento_resguardo import MovimientoOut, MovimientoCreate, MovimientoUpdate
 from app.services.uploads import guardar_archivo
 from app.services.folio import siguiente_folio
+from app.services.vale_pdf import generar_vale_pdf
 from app.deps_auth import usuario_actual
 
 router = APIRouter(prefix="/movimientos", tags=["Control de Resguardo"], dependencies=[Depends(usuario_actual)])
@@ -109,6 +114,41 @@ def crear(datos: MovimientoCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(mov)
     return mov
+
+
+@router.get("/{row_id}/vale-pdf")
+def vale_pdf(row_id: str, db: Session = Depends(get_db)):
+    mov = db.get(MovimientoResguardo, row_id)
+    if not mov:
+        raise HTTPException(404, "Movimiento no encontrado")
+
+    firma_path = None
+    if mov.firma_recibido_conformidad:
+        candidato = Path(settings.UPLOAD_DIR) / mov.firma_recibido_conformidad
+        if candidato.is_file():
+            firma_path = str(candidato)
+
+    datos = {
+        "fecha_movimiento": mov.fecha_movimiento,
+        "numero_de_vale": mov.numero_de_vale,
+        "id_numero_empleado": mov.id_numero_empleado,
+        "nombre_de_empleado": mov.nombre_de_empleado,
+        "puesto_posicion": mov.puesto_posicion,
+        "departamento": mov.departamento,
+        "jefe_inmediato": mov.jefe_inmediato,
+        "cantidad": mov.cantidad,
+        "numero_economico": mov.numero_economico,
+        "descripcion": mov.descripcion,
+        "firma_recibido_conformidad_path": firma_path,
+    }
+    contenido = generar_vale_pdf(datos)
+
+    nombre_archivo = f"vale_{mov.numero_de_vale or mov.row_id}.pdf"
+    return StreamingResponse(
+        BytesIO(contenido),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{nombre_archivo}"'},
+    )
 
 
 @router.put("/{row_id}", response_model=MovimientoOut)

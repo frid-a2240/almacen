@@ -9,3 +9,5 @@ bcrypt<4.1
 pyjwt
 openpyxl
 Pillow
+reportlab
+pypdf
