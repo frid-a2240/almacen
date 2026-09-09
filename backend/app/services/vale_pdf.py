@@ -14,7 +14,7 @@ from io import BytesIO
 from pathlib import Path
 
 from pypdf import PdfReader, PdfWriter
-from reportlab.lib.colors import black
+from reportlab.lib.colors import black, white
 from reportlab.pdfgen import canvas
 
 _PLANTILLA = Path(__file__).resolve().parent.parent / "templates" / "vale_equipo_herramienta.pdf"
@@ -50,6 +50,14 @@ def _texto(c, x, top, texto, size=8, bold=False, center=False, max_width=None, s
         c.drawString(x, _y(top), texto)
 
 
+def _borrar(c, x0, top0, x1, top1):
+    """Tapa con blanco una región de la plantilla — para reescribir una
+    etiqueta que viene partida en dos líneas dentro del PDF original."""
+    c.setFillColor(white)
+    c.rect(x0, _y(top1), x1 - x0, top1 - top0, fill=1, stroke=0)
+    c.setFillColor(black)
+
+
 def _campos_copia(c, m, delta):
     d = delta
     fecha = m["fecha_movimiento"]
@@ -62,12 +70,16 @@ def _campos_copia(c, m, delta):
     # primeras filas disponible, debajo del encabezado "No." en rojo.
     _texto(c, 558, 58 + d, str(m.get("numero_de_vale") or ""), size=14, bold=True, center=True)
 
-    # No. de Empleado: en su propio recuadro, a la derecha de "Empleado:".
-    _texto(c, 98, 80 + d, m.get("id_numero_empleado"), size=6.5, bold=True, center=True)
-    # Nombre Completo: misma línea que su propia etiqueta, justo después de
-    # "Completo:" — el espacio es angosto (label termina casi al borde de la
-    # celda), así que reduce la letra en vez de cortar el nombre.
-    _texto(c, 354, 71 + d, m.get("nombre_de_empleado"), size=7, max_width=63, size_min=4.5)
+    # No. de Empleado: la etiqueta viene partida en dos líneas ("No. de" /
+    # "Empleado:") en el PDF original — se tapa y se redibuja en una sola
+    # línea, con el número debajo, centrado en su propio recuadro.
+    _borrar(c, 27, 62 + d, 116, 82 + d)
+    _texto(c, 29, 71 + d, "No. de Empleado:", size=6, max_width=85, size_min=4.5)
+    _texto(c, 71.7, 80 + d, m.get("id_numero_empleado"), size=7, bold=True, center=True)
+    # Nombre Completo: el valor va justo debajo de su etiqueta, alineado a la
+    # misma posición horizontal — con todo el ancho de la celda disponible
+    # no hace falta reducir la letra.
+    _texto(c, 259, 81 + d, m.get("nombre_de_empleado"), size=7, max_width=155, size_min=5)
     _texto(c, 468, 71 + d, m.get("puesto_posicion"), size=7, max_width=115)
 
     # Proyecto o Área de Trabajo (=Departamento) / Nombre del Supervisor —
