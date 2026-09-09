@@ -82,12 +82,15 @@ def _campos_copia(c, m, delta):
     _texto(c, 558, 58 + d, str(m.get("numero_de_vale") or ""), size=14, center=True)
 
     # No. de Empleado: la etiqueta viene partida en dos líneas ("No. de" /
-    # "Empleado:") en el PDF original — se tapa y se redibuja junto con el
-    # número, los dos en una sola línea (como el resto de los campos).
+    # "Empleado:") en el PDF original — se tapa y se redibuja en una sola
+    # línea, con el número en su propio recuadro cerrado debajo (en vez de
+    # depender del borde angosto de la celda, que se veía como una línea
+    # suelta al imprimir).
     _borrar(c, 27, 62 + d, 116, 82 + d)
-    numero_empleado = m.get("id_numero_empleado")
-    etiqueta_empleado = f"No. de Empleado: {numero_empleado}" if numero_empleado else "No. de Empleado:"
-    _texto(c, 29, 71 + d, etiqueta_empleado, size=7, max_width=85, size_min=6)
+    _texto(c, 29, 71 + d, "No. de Empleado:", size=7, max_width=85, size_min=6)
+    c.setLineWidth(0.75)
+    c.rect(40, _y(81 + d), 63, 8, fill=0, stroke=1)
+    _texto(c, 71.5, 79 + d, m.get("id_numero_empleado"), size=7, center=True)
     # Nombre Completo: el valor va justo debajo de su etiqueta, alineado a la
     # misma posición horizontal — con todo el ancho de la celda disponible
     # no hace falta reducir la letra. El renglón sube un poco (79 en vez de
