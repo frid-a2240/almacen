@@ -59,7 +59,14 @@ public class PrinterPlugin extends Plugin {
                     call.reject("El sistema no tiene servicio de impresión");
                     return;
                 }
-                printManager.print(jobName, new PdfDocumentAdapter(archivo, jobName), new PrintAttributes.Builder().build());
+                // El vale ya es una sola página (con las dos copias) — se
+                // manda "una sola cara" por default para que no haya que
+                // desmarcar el doble lado a mano cada vez. La impresora
+                // igual permite cambiarlo desde el propio diálogo.
+                PrintAttributes atributos = new PrintAttributes.Builder()
+                        .setDuplexMode(PrintAttributes.DUPLEX_MODE_NONE)
+                        .build();
+                printManager.print(jobName, new PdfDocumentAdapter(archivo, jobName), atributos);
                 call.resolve();
             } catch (IOException e) {
                 call.reject("No se pudo preparar el PDF para imprimir", e);
