@@ -1,27 +1,38 @@
 """Vale electrónico: escribe los datos del movimiento directo sobre el PDF
-real de la plantilla (backend/app/templates/vale_equipo_herramienta.pdf,
-exportada tal cual del .docx oficial "vale de equipo y herramienta doble"),
+real de la plantilla (backend/app/templates/vale_equipo_herramienta.pdf),
 en vez de recrear el diseño — mismo criterio que inventario_excel.py con la
 plantilla .xlsm: la plantilla real no se toca, solo se le escribe encima.
+
+La plantilla es la exportación a PDF del Excel oficial "vale equipo
+excel.xlsx" (con el pie de página/leyenda agregado) — se usa esa fuente en
+vez del .docx porque Word exportaba el borde entre "No. de Empleado" y
+"Nombre Completo" con un grosor irregular ("línea gruesa"); el mismo
+documento exportado desde Excel no tiene ese problema.
 
 Coordenadas en puntos PDF (origen abajo-izquierda), calibradas a mano contra
 la plantilla en Carta (612x792pt) — DELTA_COPIA_2 es la distancia vertical
 entre la copia de arriba y la de abajo (idéntica en ambas, medida sobre el
-logo de cada una).
+título "VALE..." de cada una).
 """
 from datetime import date
 from io import BytesIO
 from pathlib import Path
 
 from pypdf import PdfReader, PdfWriter
-from reportlab.lib.colors import black, white
+from reportlab.lib.colors import black
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 _PLANTILLA = Path(__file__).resolve().parent.parent / "templates" / "vale_equipo_herramienta.pdf"
 _ALTO_PAGINA = 792.0
-_DELTA_COPIA_2 = 387.7  # distancia vertical entre la copia 1 y la copia 2 (medida sobre "VALE" del título de ambas)
+# Distancia vertical entre la copia de arriba y la de abajo. El título mismo
+# ("VALE...") baja 402.3pt, pero la fila del encabezado (Fecha de
+# Entrega/Folio/No.) mide ~4pt menos alta en la copia de abajo — como todo
+# lo que escribimos en esa fila va pegado a su borde inferior (no a la
+# etiqueta), usamos el delta medido sobre ese borde (398.25), que es el que
+# de verdad le aplica a nuestro texto.
+_DELTA_COPIA_2 = 398.25
 
 # Mismo tipo de letra que usa la plantilla ("Mont Book") — el .otf original
 # tiene contornos PostScript que reportlab no soporta, así que se usa una
@@ -61,53 +72,36 @@ def _texto(c, x, top, texto, size=8, center=False, max_width=None, size_min=None
         c.drawString(x, _y(top), texto)
 
 
-def _borrar(c, x0, top0, x1, top1):
-    """Tapa con blanco una región de la plantilla — para reescribir una
-    etiqueta que viene partida en dos líneas dentro del PDF original."""
-    c.setFillColor(white)
-    c.rect(x0, _y(top1), x1 - x0, top1 - top0, fill=1, stroke=0)
-    c.setFillColor(black)
-
-
-def _campos_copia(c, m, delta):
-    d = delta
+def _campos_copia(c, m, d):
     fecha = m["fecha_movimiento"]
     fecha_str = fecha.strftime("%d/%m/%Y") if isinstance(fecha, date) else (fecha or "")
 
-    # Fecha de Entrega: la etiqueta ("Fecha"/"de"/"Entrega"/":") ocupa las 4
-    # líneas de la celda — el valor va en la misma línea de ":", a su derecha.
-    _texto(c, 430, 60 + d, fecha_str, size=6.5)
-    # Folio / No.: celda ancha a la derecha, con toda la altura de las 3
-    # primeras filas disponible, debajo del encabezado "No." en rojo.
-    _texto(c, 558, 58 + d, str(m.get("numero_de_vale") or ""), size=14, center=True)
+    # Fecha de Entrega: la etiqueta ya va en una sola línea — el valor va
+    # debajo, dentro de la misma celda (queda apretado a la derecha si se
+    # pone junto a la etiqueta).
+    _texto(c, 296, 52 + d, fecha_str, size=7, max_width=56)
+    # Folio / No.: celda angosta a la derecha, debajo del encabezado "No."
+    # en rojo — centrado en la celda.
+    _texto(c, 418.4, 54 + d, str(m.get("numero_de_vale") or ""), size=11, center=True)
 
-    # No. de Empleado: en el .docx original es una sola celda de tabla (sin
-    # ningún recuadro extra) donde "No. de Empleado:" ya viene partido en dos
-    # líneas por el ancho angosto de la columna (91pt) — se tapa y se
-    # redibuja en una sola línea, junto con el número, sin agregar bordes
-    # nuevos (un recuadro adicional pegado al borde real de la celda se veía
-    # como una línea doble/gruesa).
-    _borrar(c, 27, 62 + d, 116, 82 + d)
-    numero_empleado = m.get("id_numero_empleado")
-    etiqueta_empleado = f"No. de Empleado: {numero_empleado}" if numero_empleado else "No. de Empleado:"
-    _texto(c, 29, 71 + d, etiqueta_empleado, size=7, max_width=85, size_min=6)
-    # Nombre Completo: el valor va justo debajo de su etiqueta, alineado a la
-    # misma posición horizontal — con todo el ancho de la celda disponible
-    # no hace falta reducir la letra. El renglón sube un poco (79 en vez de
-    # 81) para no rozar la línea de la celda que viene justo debajo (82.3).
-    _texto(c, 259, 79 + d, m.get("nombre_de_empleado"), size=7, max_width=155, size_min=5)
-    _texto(c, 468, 71 + d, m.get("puesto_posicion"), size=7, max_width=115)
+    # No. de Empleado / Nombre Completo / Puesto: las tres etiquetas ya
+    # vienen en una sola línea en esta plantilla (a diferencia de la
+    # exportada desde Word) — el valor va a la derecha de cada una, en el
+    # espacio que le queda a la celda.
+    _texto(c, 82, 61 + d, m.get("id_numero_empleado"), size=6.5, max_width=24, size_min=5)
+    _texto(c, 175, 61 + d, m.get("nombre_de_empleado"), size=7, max_width=113, size_min=5.5)
+    _texto(c, 320, 61 + d, m.get("puesto_posicion"), size=7, max_width=123)
 
     # Proyecto o Área de Trabajo (=Departamento) / Nombre del Supervisor —
     # valor en la misma línea, a la derecha de cada etiqueta.
-    _texto(c, 189, 92 + d, m.get("departamento"), size=7.5, max_width=140)
-    _texto(c, 468, 92 + d, m.get("jefe_inmediato"), size=7, max_width=115)
+    _texto(c, 123, 71 + d, m.get("departamento"), size=7, max_width=75)
+    _texto(c, 279, 71 + d, m.get("jefe_inmediato"), size=7, max_width=160)
 
     # Primer (y único, por ahora) renglón de herramienta de la tabla
-    fila_y = 139 + d
-    _texto(c, 42, fila_y, m.get("cantidad"), size=7, center=True)
-    _texto(c, 87, fila_y, m.get("numero_economico"), size=6.5, center=True)
-    _texto(c, 122, fila_y, m.get("descripcion"), size=6.5, max_width=260)
+    fila_y = 114 + d
+    _texto(c, 42.8, fila_y, m.get("cantidad"), size=7, center=True)
+    _texto(c, 82.9, fila_y, m.get("numero_economico"), size=6.5, center=True)
+    _texto(c, 113, fila_y, m.get("descripcion"), size=6.5, max_width=198)
 
 
 def generar_vale_pdf(movimiento: dict) -> bytes:
