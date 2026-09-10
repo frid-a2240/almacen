@@ -30,13 +30,14 @@ from reportlab.pdfgen import canvas
 
 _PLANTILLA = Path(__file__).resolve().parent.parent / "templates" / "vale_equipo_herramienta.pdf"
 _ALTO_PAGINA = 792.0
-# Distancia vertical entre la copia de arriba y la de abajo. El título mismo
-# ("VALE...") baja 402.3pt, pero la fila del encabezado (Fecha de
-# Entrega/Folio/No.) mide ~4pt menos alta en la copia de abajo — como todo
-# lo que escribimos en esa fila va pegado a su borde inferior (no a la
-# etiqueta), usamos el delta medido sobre ese borde (398.25), que es el que
-# de verdad le aplica a nuestro texto.
-_DELTA_COPIA_2 = 391.913
+# La copia 1 no arranca exactamente en el borde de la hoja: se bajó 2pt (y
+# la copia 2 389.087pt) para dejar 14pt de margen arriba y abajo — la
+# primera versión apilada dejaba solo ~11pt abajo, y se cortaba al imprimir
+# en impresoras que no llegan tan cerca del borde del papel. El espacio
+# entre copias (10.2pt) tiene una línea punteada para guiar el corte con
+# tijeras, dibujada directamente en la plantilla (no en cada request).
+_DELTA_COPIA_1 = 2.0
+_DELTA_COPIA_2 = 389.087
 
 # Mismo tipo de letra que usa la plantilla ("Mont Book") — el .otf original
 # tiene contornos PostScript que reportlab no soporta, así que se usa una
@@ -109,7 +110,7 @@ def generar_vale_pdf(movimiento: dict) -> bytes:
     buffer_overlay = BytesIO()
     c = canvas.Canvas(buffer_overlay, pagesize=(612, 792))
     c.setFillColor(black)
-    _campos_copia(c, movimiento, 0.0)
+    _campos_copia(c, movimiento, _DELTA_COPIA_1)
     _campos_copia(c, movimiento, _DELTA_COPIA_2)
     c.save()
     buffer_overlay.seek(0)
