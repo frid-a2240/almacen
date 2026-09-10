@@ -10,7 +10,7 @@ import {
   crearMovimiento, actualizarMovimiento, obtenerValePdf,
   subirFotoVale, subirFotoProductoMovimiento, subirFotoNumeroSerie, subirFirma,
 } from '../api/movimientos.js'
-import { imprimirPdf } from '../utils/imprimir.js'
+import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
 
 const VACIO = {
   fecha_movimiento: dayjs().format('YYYY-MM-DD'), numero_de_vale: '', tipo_movimiento: 'SALIDA',
@@ -47,10 +47,17 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
   }, [open, movimiento])
 
   const guardar = async () => {
+    // El vale electrónico solo aplica a una SALIDA nueva. La pestaña de
+    // impresión se abre AQUÍ, antes de cualquier await — si se abre después
+    // de esperar el guardado/las fotos, el navegador ya no lo cuenta como
+    // resultado directo del clic y la bloquea en silencio (sin aviso).
+    const esNuevo = !movimiento
+    const vaAImprimir = esNuevo && form.tipo_movimiento === 'SALIDA'
+    const ventanaImpresion = vaAImprimir ? abrirVentanaImpresion() : null
+
     setGuardando(true)
     try {
       let rowId = movimiento?.row_id
-      const esNuevo = !movimiento
       if (movimiento) {
         await actualizarMovimiento(rowId, form)
       } else {
@@ -70,16 +77,16 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
         firma && subirFirma(rowId, firma),
       ])
 
-      // El vale electrónico (con folio consecutivo) solo aplica a una SALIDA
-      // nueva — es el comprobante que se entrega al sacar la herramienta, no
-      // algo que se vuelva a imprimir al editar o al registrar una ENTRADA.
       // Se arma en el backend sobre la plantilla real (PDF), no se recrea acá.
-      if (esNuevo && form.tipo_movimiento === 'SALIDA') {
+      if (vaAImprimir) {
         const pdf = await obtenerValePdf(rowId)
-        imprimirPdf(pdf, `vale_${rowId}`)
+        imprimirPdf(pdf, `vale_${rowId}`, ventanaImpresion)
       }
 
       onSaved(rowId)
+    } catch (err) {
+      ventanaImpresion?.close()
+      throw err
     } finally {
       setGuardando(false)
     }

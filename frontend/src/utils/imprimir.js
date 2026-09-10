@@ -14,12 +14,25 @@ function comoBase64(arrayBuffer) {
 }
 
 /**
+ * Abre la pestaña donde después se va a mostrar el PDF — hay que llamarla
+ * de inmediato, dentro del mismo clic del usuario (antes de cualquier
+ * await), porque los navegadores solo permiten window.open() sin bloqueo
+ * de pop-ups como reacción directa a un gesto del usuario. Si se abre
+ * después de esperar el guardado/las fotos, ya no cuenta como tal y el
+ * navegador la bloquea en silencio (sin aviso ni error).
+ */
+export function abrirVentanaImpresion() {
+  return esNativo ? null : window.open('', '_blank')
+}
+
+/**
  * Manda a imprimir un PDF (el vale electrónico, ya armado sobre la
  * plantilla real). En la tablet (APK) usa el plugin nativo Printer, que abre
  * el diálogo nativo de impresión de Android. En el navegador (dashboard web)
- * abre el PDF en una pestaña nueva y dispara el diálogo de impresión ahí.
+ * usa la pestaña de abrirVentanaImpresion() (o abre una nueva si no se le
+ * pasó) y dispara el diálogo de impresión ahí.
  */
-export async function imprimirPdf(arrayBuffer, nombre) {
+export async function imprimirPdf(arrayBuffer, nombre, ventanaPrevia) {
   if (esNativo) {
     await Printer.printPdf({ base64: comoBase64(arrayBuffer), jobName: nombre })
     return
@@ -27,9 +40,10 @@ export async function imprimirPdf(arrayBuffer, nombre) {
 
   const blob = new Blob([arrayBuffer], { type: 'application/pdf' })
   const url = URL.createObjectURL(blob)
-  const ventana = window.open(url, '_blank')
+  const ventana = ventanaPrevia || window.open(url, '_blank')
   if (!ventana) return
   ventana.addEventListener('load', () => {
     ventana.print()
   })
+  if (ventanaPrevia) ventana.location = url
 }
