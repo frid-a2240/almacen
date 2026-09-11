@@ -99,10 +99,13 @@ def _campos_copia(c, m, d):
     _texto(c, 112, 69 + d, m.get("departamento"), size=7, max_width=109)
     _texto(c, 308, 69 + d, m.get("jefe_inmediato"), size=7, max_width=251)
 
-    # Primer (y único, por ahora) renglón de herramienta de la tabla
+    # Primer (y único, por ahora) renglón de herramienta de la tabla — las
+    # celdas de Cant y N° Económico son angostas (~33pt y ~61pt), así que
+    # necesitan max_width igual que las demás o un valor largo se desborda
+    # encima de la Descripción.
     fila_y = 131 + d
-    _texto(c, 29.6, fila_y, m.get("cantidad"), size=7, center=True)
-    _texto(c, 77.2, fila_y, m.get("numero_economico"), size=6.5, center=True)
+    _texto(c, 29.6, fila_y, m.get("cantidad"), size=7, center=True, max_width=28, size_min=5)
+    _texto(c, 77.2, fila_y, m.get("numero_economico"), size=6.5, center=True, max_width=55, size_min=5)
     _texto(c, 113, fila_y, m.get("descripcion"), size=6.5, max_width=206)
 
     # Autorizado: el recuadro debajo de la etiqueta viene en blanco en la
