@@ -105,6 +105,11 @@ def _campos_copia(c, m, d):
     _texto(c, 77.2, fila_y, m.get("numero_economico"), size=6.5, center=True)
     _texto(c, 113, fila_y, m.get("descripcion"), size=6.5, max_width=206)
 
+    # Autorizado: el recuadro debajo de la etiqueta viene en blanco en la
+    # plantilla — se llena con el mismo nombre del supervisor (Nombre del
+    # Supervisor), centrado en el recuadro.
+    _texto(c, 104, 283 + d, m.get("jefe_inmediato"), size=7, center=True, max_width=175, size_min=5.5)
+
 
 def generar_vale_pdf(movimiento: dict) -> bytes:
     buffer_overlay = BytesIO()
