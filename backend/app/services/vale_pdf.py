@@ -108,10 +108,13 @@ def _campos_copia(c, m, d):
     _texto(c, 77.2, fila_y, m.get("numero_economico"), size=6.5, center=True, max_width=55, size_min=5)
     _texto(c, 113, fila_y, m.get("descripcion"), size=6.5, max_width=206)
 
-    # Autorizado: el recuadro debajo de la etiqueta viene en blanco en la
-    # plantilla — se llena con el mismo nombre del supervisor (Nombre del
-    # Supervisor), centrado en el recuadro.
-    _texto(c, 104, 283 + d, m.get("jefe_inmediato"), size=7, center=True, max_width=175, size_min=5.5)
+    # Autorizado: el recuadro debajo de "Autorizado"/"Nombre y Firma de
+    # Entrega:" es UNA sola celda ancha (sin división entre las dos
+    # etiquetas), así que centrar el nombre en toda la celda (x=104) lo deja
+    # a medio camino entre ambas etiquetas, como flotando — se ve chueco. Se
+    # centra en cambio bajo la palabra "Autorizado" (que va de x=43 a x=79,
+    # centro=61), que es a la que corresponde este dato.
+    _texto(c, 61, 283 + d, m.get("jefe_inmediato"), size=7, center=True, max_width=90, size_min=5.5)
 
 
 def generar_vale_pdf(movimiento: dict) -> bytes:
