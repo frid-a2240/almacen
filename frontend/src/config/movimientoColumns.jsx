@@ -25,4 +25,4 @@ export function columnasMovimientoCompletas() {
     { field: 'observaciones', headerName: 'Observaciones' },
     { field: 'costo_unitario', headerName: 'Costo Unitario', renderCell: (m) => formatoMoneda(m.costo_unitario) },
   ]
-}
+}            
