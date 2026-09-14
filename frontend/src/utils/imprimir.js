@@ -43,7 +43,12 @@ export async function imprimirPdf(arrayBuffer, nombre, ventanaPrevia) {
   const ventana = ventanaPrevia || window.open(url, '_blank')
   if (!ventana) return
   ventana.addEventListener('load', () => {
-    ventana.print()
+    // El evento "load" de la pestaña dispara en cuanto el visor de PDF del
+    // navegador arranca, no cuando terminó de renderizar la página (imágenes
+    // incluidas) — imprimir de inmediato puede capturar el PDF a medio
+    // renderizar (el logo sale distorsionado/incompleto). Dando un respiro
+    // antes de llamar a print() le da tiempo al visor de terminar.
+    setTimeout(() => ventana.print(), 700)
   })
   if (ventanaPrevia) ventana.location = url
 }
