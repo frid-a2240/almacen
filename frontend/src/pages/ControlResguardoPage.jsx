@@ -13,7 +13,7 @@ import FilterPanel from '../components/FilterPanel.jsx'
 import SelectionBar from '../components/SelectionBar.jsx'
 import MovimientoDetailPanel from '../components/MovimientoDetailPanel.jsx'
 import MovimientoFormDialog from '../components/MovimientoFormDialog.jsx'
-import { listarMovimientos, eliminarMovimiento } from '../api/movimientos.js'
+import { listarMovimientos, eliminarMovimiento, obtenerValePdf } from '../api/movimientos.js'
 import { listarEmpleados } from '../api/empleados.js'
 import { listarProductos } from '../api/productos.js'
 import { listarDepartamentos } from '../api/departamentos.js'
@@ -21,6 +21,7 @@ import { formatoFechaLarga } from '../utils/formatters.js'
 import { useSearch } from '../context/SearchContext.jsx'
 import { coincideBusqueda } from '../utils/search.js'
 import { cumpleFiltros, contarFiltrosActivos } from '../utils/filters.js'
+import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
 
 const CAMPOS_BUSQUEDA = ['descripcion', 'nombre_de_empleado', 'codigo_sai_sku', 'numero_de_vale', 'id_numero_empleado']
 
@@ -104,6 +105,19 @@ export default function ControlResguardoPage() {
     setDialogoAbierto(true)
   }
 
+  const reimprimirVale = async (m) => {
+    // Igual que al guardar: la pestaña se abre AQUÍ, antes de cualquier
+    // await, para que el navegador no la bloquee como pop-up.
+    const ventanaImpresion = abrirVentanaImpresion()
+    try {
+      const pdf = await obtenerValePdf(m.row_id)
+      await imprimirPdf(pdf, `vale_${m.row_id}`, ventanaImpresion)
+    } catch (err) {
+      ventanaImpresion?.close()
+      throw err
+    }
+  }
+
   const confirmarEliminar = async () => {
     const rowId = aEliminar.row_id
     await eliminarMovimiento(rowId)
@@ -167,6 +181,7 @@ export default function ControlResguardoPage() {
                   onView={() => verDetalle(m)}
                   onEdit={() => abrirEditar(m)}
                   onDelete={() => setAEliminar(m)}
+                  onReprint={m.tipo_movimiento === 'SALIDA' ? () => reimprimirVale(m) : undefined}
                   modoSeleccion={modoSeleccion}
                   marcado={marcados.has(m.row_id)}
                   onToggleMarcado={() => toggleMarcado(m.row_id)}

@@ -11,6 +11,7 @@ from app.schemas.movimiento_resguardo import MovimientoOut
 from app.services.uploads import guardar_archivo
 from app.services.resguardo import resguardo_actual_de
 from app.services.inventario_excel import generar_inventario_xlsm
+from app.services.resguardo_pdf import generar_resguardo_pdf
 from app.deps_auth import usuario_actual
 
 router = APIRouter(prefix="/empleados", tags=["Empleados"], dependencies=[Depends(usuario_actual)])
@@ -101,6 +102,27 @@ def resguardo_excel(id_numero_empleado: str, db: Session = Depends(get_db)):
         BytesIO(contenido),
         media_type="application/vnd.ms-excel.sheet.macroEnabled.12",
         headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
+    )
+
+
+@router.get("/{id_numero_empleado}/resguardo-pdf")
+def resguardo_pdf(id_numero_empleado: str, db: Session = Depends(get_db)):
+    """Mismos datos que resguardo-excel, pero como PDF listo para imprimir
+    (en la tablet, bajar un .xlsm no sirve de mucho)."""
+    emp = db.get(Empleado, id_numero_empleado)
+    if not emp:
+        raise HTTPException(404, "Empleado no encontrado")
+
+    filas = resguardo_actual_de(db, id_numero_empleado)
+    contenido = generar_resguardo_pdf(
+        emp.nombre_de_empleado, emp.id_numero_empleado, emp.puesto_posicion, filas,
+    )
+
+    nombre_archivo = f"resguardo_{id_numero_empleado}.pdf"
+    return StreamingResponse(
+        BytesIO(contenido),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{nombre_archivo}"'},
     )
 
 

@@ -46,6 +46,12 @@ _ALTO_PAGINA = 792.0
 _DELTA_COPIA_1 = 2.0
 _DELTA_COPIA_2 = 394.784
 
+# Tabla de herramientas: 6 renglones, medidos en la plantilla — el primero
+# (con datos) al centro de su celda, y cada uno siguiente 17.04pt más abajo
+# (la altura real de cada renglón de la tabla).
+_FILA_1 = 138.2
+_ALTO_FILA = 17.04
+
 # Mismo tipo de letra que usa la plantilla ("Mont Book") — el .otf original
 # tiene contornos PostScript que reportlab no soporta, así que se usa una
 # conversión a contornos TrueType (backend/app/assets/fonts), hecha una sola
@@ -110,14 +116,17 @@ def _campos_copia(c, m, d):
     _texto(c, 116.3, 79.8 + d, m.get("departamento"), size=7.5, max_width=118)
     _texto(c, 323.5, 79.8 + d, m.get("jefe_inmediato"), size=7.5, max_width=263)
 
-    # Primer (y único, por ahora) renglón de herramienta de la tabla — las
-    # celdas de Cant y N° Económico son angostas, así que necesitan
-    # max_width igual que las demás o un valor largo se desborda encima de
-    # la Descripción.
-    fila_y = 138.2 + d
-    _texto(c, 31.1, fila_y, m.get("cantidad"), size=8, center=True, max_width=32, size_min=5.5)
-    _texto(c, 81, fila_y, m.get("numero_economico"), size=7.5, center=True, max_width=62, size_min=5.5)
-    _texto(c, 117.7, fila_y, m.get("descripcion"), size=7.5, max_width=273)
+    # Renglones de herramienta de la tabla — hasta 6 (lo que quepa en la
+    # plantilla), un vale puede llevar varias. _ALTO_FILA es la distancia
+    # entre el centro de un renglón y el siguiente, medida directo en la
+    # plantilla (17.04pt); las celdas de Cant y N° Económico son angostas,
+    # así que necesitan max_width igual que las demás o un valor largo se
+    # desborda encima de la Descripción.
+    for i, herramienta in enumerate(m.get("herramientas") or []):
+        fila_y = _FILA_1 + i * _ALTO_FILA + d
+        _texto(c, 31.1, fila_y, herramienta.get("cantidad"), size=8, center=True, max_width=32, size_min=5.5)
+        _texto(c, 81, fila_y, herramienta.get("numero_economico"), size=7.5, center=True, max_width=62, size_min=5.5)
+        _texto(c, 117.7, fila_y, herramienta.get("descripcion"), size=7.5, max_width=273)
 
     # Nombre y Firma de Entrega: el recuadro debajo de "Autorizado"/"Nombre y
     # Firma de Entrega:" es UNA sola celda ancha (sin división entre las dos

@@ -6,6 +6,7 @@ export const obtenerMovimiento = (rowId) => client.get(`/movimientos/${rowId}`).
 export const obtenerValePdf = (rowId) =>
   client.get(`/movimientos/${rowId}/vale-pdf`, { responseType: 'arraybuffer' }).then((r) => r.data)
 export const crearMovimiento = (datos) => client.post('/movimientos/', datos).then((r) => r.data)
+export const crearSalidaMultiple = (datos) => client.post('/movimientos/salida-multiple', datos).then((r) => r.data)
 export const actualizarMovimiento = (rowId, datos) => client.put(`/movimientos/${rowId}`, datos).then((r) => r.data)
 export const eliminarMovimiento = (rowId) => client.delete(`/movimientos/${rowId}`)
 

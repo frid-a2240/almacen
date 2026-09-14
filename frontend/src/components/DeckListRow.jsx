@@ -1,6 +1,7 @@
 import { Box, Typography, IconButton, Tooltip } from '@mui/material'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
+import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import Thumbnail from './Thumbnail.jsx'
 
@@ -20,6 +21,7 @@ export default function DeckListRow({
   onView,
   onEdit,
   onDelete,
+  onReprint,
   extraActions = [],
   selected = false,
   style,
@@ -83,6 +85,13 @@ export default function DeckListRow({
           <IconButton size="small" onClick={onDelete} sx={{ color: 'text.secondary' }}>
             <DeleteOutlineIcon fontSize="small" />
           </IconButton>
+        )}
+        {onReprint && (
+          <Tooltip title="Reimprimir vale">
+            <IconButton size="small" onClick={onReprint} sx={{ color: 'text.secondary' }}>
+              <PrintOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         )}
         {onEdit && (
           <IconButton size="small" onClick={onEdit} sx={{ color: 'text.secondary' }}>

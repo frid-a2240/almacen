@@ -12,6 +12,9 @@ export const subirFotoEmpleado = (id, archivo) => {
   return client.post(`/empleados/${id}/foto`, form).then((r) => r.data)
 }
 
+export const obtenerResguardoPdf = (id) =>
+  client.get(`/empleados/${id}/resguardo-pdf`, { responseType: 'arraybuffer' }).then((r) => r.data)
+
 export const descargarResguardoExcel = async (id) => {
   const respuesta = await client.get(`/empleados/${id}/resguardo-excel`, { responseType: 'blob' })
   const url = URL.createObjectURL(respuesta.data)

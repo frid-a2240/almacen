@@ -16,6 +16,21 @@ class MovimientoCreate(BaseModel):
     observaciones: Optional[str] = None
 
 
+class ItemVale(BaseModel):
+    codigo_sai_sku: str
+    cantidad: Decimal
+    numero_economico: Optional[str] = None
+
+
+class SalidaMultipleCreate(BaseModel):
+    """Un solo vale (un solo folio) con varias herramientas — de 1 a 6."""
+    fecha_movimiento: date
+    id_numero_empleado: str
+    status: str = "ACTIVO"
+    observaciones: Optional[str] = None
+    items: list[ItemVale]
+
+
 class MovimientoUpdate(BaseModel):
     fecha_movimiento: Optional[date] = None
     numero_de_vale: Optional[str] = None
