@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField,
-  MenuItem, Stack, Autocomplete, Typography,
+  MenuItem, Stack, Autocomplete, Typography, Alert,
 } from '@mui/material'
 import dayjs from 'dayjs'
 import CampoFoto from './CampoFoto.jsx'
@@ -26,6 +26,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
   const [fotoNumeroSerie, setFotoNumeroSerie] = useState(null)
   const [firma, setFirma] = useState(null)
   const [guardando, setGuardando] = useState(false)
+  const [aviso, setAviso] = useState('')
 
   useEffect(() => {
     if (!open) return
@@ -35,6 +36,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
     setFotoProducto(null)
     setFotoNumeroSerie(null)
     setFirma(null)
+    setAviso('')
     setForm(movimiento ? {
       fecha_movimiento: movimiento.fecha_movimiento,
       numero_de_vale: movimiento.numero_de_vale || '',
@@ -56,6 +58,8 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
     const ventanaImpresion = vaAImprimir ? abrirVentanaImpresion() : null
 
     setGuardando(true)
+    setAviso('')
+    let huboProblema = false
     try {
       let rowId = movimiento?.row_id
       if (movimiento) {
@@ -68,22 +72,41 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
         })
         rowId = creado.row_id
       }
-      // En paralelo — no hay dependencia entre ellas, y subirlas una por una
-      // sumaba varios segundos extra a cada guardado.
-      await Promise.all([
-        fotoVale && subirFotoVale(rowId, fotoVale),
-        fotoProducto && subirFotoProductoMovimiento(rowId, fotoProducto),
-        fotoNumeroSerie && subirFotoNumeroSerie(rowId, fotoNumeroSerie),
-        firma && subirFirma(rowId, firma),
-      ])
 
-      // Se arma en el backend sobre la plantilla real (PDF), no se recrea acá.
+      // Imprimir va ANTES de subir las fotos y en su propio try/catch: es lo
+      // urgente para la entrega física, y no debe quedar bloqueado ni en
+      // silencio si una foto/firma falla al subir (antes, un solo error en
+      // el Promise.all de las fotos hacía que TODO el guardado terminara en
+      // catch sin avisar nada, saltándose la impresión sin dejar rastro).
       if (vaAImprimir) {
-        const pdf = await obtenerValePdf(rowId)
-        imprimirPdf(pdf, `vale_${rowId}`, ventanaImpresion)
+        try {
+          const pdf = await obtenerValePdf(rowId)
+          await imprimirPdf(pdf, `vale_${rowId}`, ventanaImpresion)
+        } catch (err) {
+          ventanaImpresion?.close()
+          huboProblema = true
+          setAviso('El movimiento se guardó, pero no se pudo mandar a imprimir el vale. Vuelve a intentarlo desde Control de Resguardo.')
+        }
       }
 
-      onSaved(rowId)
+      // En paralelo — no hay dependencia entre ellas, y subirlas una por una
+      // sumaba varios segundos extra a cada guardado.
+      try {
+        await Promise.all([
+          fotoVale && subirFotoVale(rowId, fotoVale),
+          fotoProducto && subirFotoProductoMovimiento(rowId, fotoProducto),
+          fotoNumeroSerie && subirFotoNumeroSerie(rowId, fotoNumeroSerie),
+          firma && subirFirma(rowId, firma),
+        ])
+      } catch (err) {
+        huboProblema = true
+        setAviso((prev) => prev || 'El movimiento se guardó, pero alguna foto/firma no se pudo subir. Vuelve a intentarlo desde el registro.')
+      }
+
+      // Si algo falló (imprimir o subir fotos), el movimiento de todos modos
+      // ya se guardó — pero se deja el diálogo abierto con el aviso a la
+      // vista en vez de cerrarlo solo, para que no pase desapercibido.
+      if (!huboProblema) onSaved(rowId)
     } catch (err) {
       ventanaImpresion?.close()
       throw err
@@ -99,6 +122,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       <DialogTitle>{movimiento ? 'Editar movimiento' : 'Nuevo movimiento'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
+          {aviso && <Alert severity="warning">{aviso}</Alert>}
           <TextField
             label="Fecha Movimiento" required type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }}
             value={form.fecha_movimiento}
