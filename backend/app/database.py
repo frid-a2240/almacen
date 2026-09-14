@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.config import settings
 
@@ -21,3 +21,15 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def asegurar_columnas():
+    """No hay Alembic — las tablas ya existían (vienen de AppSheet) y se
+    editan a mano con ALTER TABLE idempotentes como este, corridos una vez
+    al arrancar, tanto en local como en el servidor (con el próximo `git
+    pull` + `iisreset` ahí se aplica solo, sin tocar la base a mano)."""
+    with engine.begin() as conn:
+        conn.execute(text(
+            "ALTER TABLE movimientos_resguardo "
+            "ADD COLUMN IF NOT EXISTS nombre_usuario_entrega VARCHAR(200)"
+        ))

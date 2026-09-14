@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 
 from app.config import settings
-from app.database import engine
+from app.database import engine, asegurar_columnas
 from app.routers import departamentos, clases_familia, empleados, productos, movimientos, auth, usuarios
 from app.services.thumbnails import ruta_miniatura
 from app.services.folio import asegurar_secuencia
@@ -38,6 +38,7 @@ api.add_middleware(GZipMiddleware, minimum_size=1000)
 
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 asegurar_secuencia(engine)
+asegurar_columnas()
 # El prefijo de URL siempre es "/uploads" (el frontend lo asume fijo en
 # imageURL()), sin importar el valor de UPLOAD_DIR — que en el servidor es
 # una ruta absoluta de disco (D:\...\uploads), no algo usable como URL.

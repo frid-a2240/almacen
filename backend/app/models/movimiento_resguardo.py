@@ -19,6 +19,12 @@ class MovimientoResguardo(Base):
     departamento = Column(String(150), nullable=True)
     jefe_inmediato = Column(String(200), nullable=True)
     status = Column(String(20), nullable=True)
+    # Quién tenía la sesión iniciada al crear el movimiento (no el empleado
+    # que recibe la herramienta) — es lo que se imprime en "Nombre y Firma
+    # de Entrega" del vale. Snapshot a propósito (igual que jefe_inmediato):
+    # si luego cambia el nombre de ese usuario, los vales ya impresos no
+    # deben cambiar solos.
+    nombre_usuario_entrega = Column(String(200), nullable=True)
 
     codigo_sai_sku = Column(String(60), nullable=True)
     producto_sku = Column(String(60), ForeignKey("productos.codigo_sai_sku"), nullable=True)

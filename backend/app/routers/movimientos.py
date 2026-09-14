@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import MovimientoResguardo, Empleado, Producto
+from app.models import MovimientoResguardo, Empleado, Producto, Usuario
 from app.schemas.movimiento_resguardo import MovimientoOut, MovimientoCreate, MovimientoUpdate
 from app.services.uploads import guardar_archivo
 from app.services.folio import siguiente_folio
@@ -64,7 +64,7 @@ def obtener(row_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=MovimientoOut, status_code=201)
-def crear(datos: MovimientoCreate, db: Session = Depends(get_db)):
+def crear(datos: MovimientoCreate, db: Session = Depends(get_db), usuario: Usuario = Depends(usuario_actual)):
     if datos.tipo_movimiento not in ("SALIDA", "ENTRADA"):
         raise HTTPException(422, "tipo_movimiento debe ser SALIDA o ENTRADA")
 
@@ -93,6 +93,9 @@ def crear(datos: MovimientoCreate, db: Session = Depends(get_db)):
         puesto_posicion=empleado.puesto_posicion,
         departamento=empleado.departamento_ref.departamento if empleado.departamento_ref else None,
         jefe_inmediato=empleado.jefe_inmediato,
+        # Quien tiene la sesión iniciada al capturar el movimiento es quien
+        # entrega la herramienta — se imprime en el vale en automático.
+        nombre_usuario_entrega=usuario.nombre,
         status=datos.status,
         codigo_sai_sku=producto.codigo_sai_sku,
         producto_sku=producto.codigo_sai_sku,
@@ -128,6 +131,7 @@ def vale_pdf(row_id: str, db: Session = Depends(get_db)):
         "puesto_posicion": mov.puesto_posicion,
         "departamento": mov.departamento,
         "jefe_inmediato": mov.jefe_inmediato,
+        "nombre_usuario_entrega": mov.nombre_usuario_entrega,
         "cantidad": mov.cantidad,
         "numero_economico": mov.numero_economico,
         "descripcion": mov.descripcion,

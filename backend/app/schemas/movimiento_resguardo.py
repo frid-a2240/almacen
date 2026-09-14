@@ -39,6 +39,7 @@ class MovimientoOut(BaseModel):
     puesto_posicion: Optional[str] = None
     departamento: Optional[str] = None
     jefe_inmediato: Optional[str] = None
+    nombre_usuario_entrega: Optional[str] = None
     status: Optional[str] = None
     codigo_sai_sku: Optional[str] = None
     producto_sku: Optional[str] = None
