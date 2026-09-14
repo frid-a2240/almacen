@@ -486,3 +486,10 @@
 [2m9:56:42 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ClaseFamiliaDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
 [2m9:56:44 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
 [2m9:57:43 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m1:50:28 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/MovimientoFormDialog.jsx[22m
+[2m1:50:36 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/MovimientoFormDialog.jsx[22m
+[2m1:50:51 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/MovimientoFormDialog.jsx[22m
+[2m1:50:59 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/MovimientoFormDialog.jsx[22m
+[2m1:51:43 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/MovimientoFormDialog.jsx[22m
+[2m1:51:50 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/MovimientoFormDialog.jsx[22m
+[2m1:52:00 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/MovimientoFormDialog.jsx[22m
