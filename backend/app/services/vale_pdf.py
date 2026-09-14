@@ -3,20 +3,26 @@ real de la plantilla (backend/app/templates/vale_equipo_herramienta.pdf),
 en vez de recrear el diseño — mismo criterio que inventario_excel.py con la
 plantilla .xlsm: la plantilla real no se toca, solo se le escribe encima.
 
-La plantilla se arma en dos pasos, ambos hechos una sola vez (no en cada
+La plantilla se arma en varios pasos, todos hechos una sola vez (no en cada
 request):
 1. El Excel oficial "vale equipo excel.xlsx" (una sola copia del vale, sin
-   duplicar) se exporta a PDF vía Excel/COM a la escala que mejor llena el
-   ancho de una hoja Carta sin deformar las casillas de "Buen Estado/
-   Dañado/No Recibido" (que en el Excel original no eran cuadradas).
-2. Ese PDF de una sola copia se "apila" dos veces en una misma hoja con
+   duplicar, y con 2 renglones menos de herramienta que el original —de 8 a
+   6— para poder agrandar el resto sin que se corte al imprimir) se exporta
+   a PDF vía Excel/COM al Zoom que mejor llena una hoja Carta sin deformar
+   las casillas de "Buen Estado/Dañado/No Recibido" (que en el Excel
+   original no eran cuadradas).
+2. El logo (que en el Excel/Word original viene recortado distinto al logo
+   real de ISP, mucho más ancho/plano) se tapa y se redibuja encima con el
+   archivo oficial, en su proporción real.
+3. Ese PDF de una sola copia se "apila" dos veces en una misma hoja con
    pypdf (Transformation().translate + merge_page) — así no depende de que
-   alguien duplique filas a mano en el Excel.
+   alguien duplique filas a mano en el Excel — con una línea punteada entre
+   copias (justo al centro de la hoja) para guiar el corte con tijeras.
 
 Coordenadas en puntos PDF (origen abajo-izquierda), calibradas a mano contra
 la plantilla en Carta (612x792pt) — DELTA_COPIA_2 es la distancia vertical
-entre la copia de arriba y la de abajo: es EXACTA (391.913pt), la misma que
-se usó para apilar las dos copias en el paso 2, no una medición aproximada.
+entre la copia de arriba y la de abajo: es EXACTA (394.784pt), la misma que
+se usó para apilar las dos copias, no una medición aproximada.
 """
 from datetime import date
 from io import BytesIO
@@ -31,13 +37,14 @@ from reportlab.pdfgen import canvas
 _PLANTILLA = Path(__file__).resolve().parent.parent / "templates" / "vale_equipo_herramienta.pdf"
 _ALTO_PAGINA = 792.0
 # La copia 1 no arranca exactamente en el borde de la hoja: se bajó 2pt (y
-# la copia 2 389.087pt) para dejar 14pt de margen arriba y abajo — la
+# la copia 2 394.784pt) para dejar 14pt de margen arriba y abajo — la
 # primera versión apilada dejaba solo ~11pt abajo, y se cortaba al imprimir
 # en impresoras que no llegan tan cerca del borde del papel. El espacio
-# entre copias (10.2pt) tiene una línea punteada para guiar el corte con
-# tijeras, dibujada directamente en la plantilla (no en cada request).
+# entre copias tiene una línea punteada para guiar el corte con tijeras,
+# dibujada directamente en la plantilla (no en cada request), justo al
+# centro de la hoja (ambos márgenes son iguales, 14pt).
 _DELTA_COPIA_1 = 2.0
-_DELTA_COPIA_2 = 389.087
+_DELTA_COPIA_2 = 394.784
 
 # Mismo tipo de letra que usa la plantilla ("Mont Book") — el .otf original
 # tiene contornos PostScript que reportlab no soporta, así que se usa una
@@ -81,41 +88,45 @@ def _campos_copia(c, m, d):
     fecha = m["fecha_movimiento"]
     fecha_str = fecha.strftime("%d/%m/%Y") if isinstance(fecha, date) else (fecha or "")
 
-    # Fecha de Entrega: la etiqueta va en una sola línea, ocupando casi toda
-    # la celda — el valor va debajo, apretado.
-    _texto(c, 352, 38 + d, fecha_str, size=6.5, max_width=75)
-    # Folio / No.: celda angosta a la derecha del título — poca altura
-    # disponible debajo del encabezado "No." en rojo.
-    _texto(c, 518.9, 38 + d, str(m.get("numero_de_vale") or ""), size=10, center=True)
+    # Fecha de Entrega: la etiqueta va en una sola línea — el valor va
+    # debajo, centrado en lo que le queda de celda.
+    _texto(c, 411, 41 + d, fecha_str, size=7.5, center=True, max_width=78)
+    # Folio / No.: celda angosta a la derecha del título, debajo del
+    # encabezado "No." en rojo.
+    _texto(c, 548.5, 40.8 + d, str(m.get("numero_de_vale") or ""), size=11, center=True)
 
     # No. de Empleado / Nombre Completo / Puesto: una sola línea cada uno,
-    # el valor a la derecha de su etiqueta.
-    _texto(c, 76, 51 + d, m.get("id_numero_empleado"), size=6.5, max_width=30, size_min=5)
-    _texto(c, 179, 51 + d, m.get("nombre_de_empleado"), size=7, max_width=167, size_min=5.5)
-    _texto(c, 379, 51 + d, m.get("puesto_posicion"), size=7, max_width=180)
+    # el valor a la derecha de su etiqueta — el "top" que da pdfplumber para
+    # la etiqueta es el borde de arriba de la letra, no la línea base; para
+    # alinear el valor con la etiqueta se usa el "bottom" de la etiqueta
+    # (borde de abajo, práctimente la línea base) en vez de su "top".
+    _texto(c, 79, 60.8 + d, m.get("id_numero_empleado"), size=7, max_width=32, size_min=5.5)
+    _texto(c, 186.6, 60.8 + d, m.get("nombre_de_empleado"), size=7.5, max_width=179, size_min=6)
+    _texto(c, 399, 60.8 + d, m.get("puesto_posicion"), size=7.5, max_width=188)
 
     # Proyecto o Área de Trabajo (=Departamento) / Nombre del Supervisor —
-    # valor en la misma línea, a la derecha de cada etiqueta.
-    _texto(c, 112, 69 + d, m.get("departamento"), size=7, max_width=109)
-    _texto(c, 308, 69 + d, m.get("jefe_inmediato"), size=7, max_width=251)
+    # valor en la misma línea, a la derecha de cada etiqueta (mismo criterio
+    # de usar el "bottom" de la etiqueta, no su "top").
+    _texto(c, 116.3, 79.8 + d, m.get("departamento"), size=7.5, max_width=118)
+    _texto(c, 323.5, 79.8 + d, m.get("jefe_inmediato"), size=7.5, max_width=263)
 
     # Primer (y único, por ahora) renglón de herramienta de la tabla — las
-    # celdas de Cant y N° Económico son angostas (~33pt y ~61pt), así que
-    # necesitan max_width igual que las demás o un valor largo se desborda
-    # encima de la Descripción.
-    fila_y = 131 + d
-    _texto(c, 29.6, fila_y, m.get("cantidad"), size=7, center=True, max_width=28, size_min=5)
-    _texto(c, 77.2, fila_y, m.get("numero_economico"), size=6.5, center=True, max_width=55, size_min=5)
-    _texto(c, 113, fila_y, m.get("descripcion"), size=6.5, max_width=206)
+    # celdas de Cant y N° Económico son angostas, así que necesitan
+    # max_width igual que las demás o un valor largo se desborda encima de
+    # la Descripción.
+    fila_y = 138.2 + d
+    _texto(c, 31.1, fila_y, m.get("cantidad"), size=8, center=True, max_width=32, size_min=5.5)
+    _texto(c, 81, fila_y, m.get("numero_economico"), size=7.5, center=True, max_width=62, size_min=5.5)
+    _texto(c, 117.7, fila_y, m.get("descripcion"), size=7.5, max_width=273)
 
     # Nombre y Firma de Entrega: el recuadro debajo de "Autorizado"/"Nombre y
     # Firma de Entrega:" es UNA sola celda ancha (sin división entre las dos
     # etiquetas) — se centra bajo la palabra "Nombre y Firma de Entrega:"
-    # (que va de x=117.9 a x=186.7, centro≈152), con el nombre del usuario
+    # (que va de x=124.2 a x=196.6, centro≈160.4), con el nombre del usuario
     # que tiene la sesión iniciada cuando se hizo el movimiento (quien
     # entrega la herramienta), no con el del empleado que la recibe.
     # "Autorizado" se deja en blanco — ya no se usa.
-    _texto(c, 152, 283 + d, m.get("nombre_usuario_entrega"), size=7, center=True, max_width=85, size_min=5.5)
+    _texto(c, 160.4, 269.9 + d, m.get("nombre_usuario_entrega"), size=8, center=True, max_width=110, size_min=6)
 
 
 def generar_vale_pdf(movimiento: dict) -> bytes:
