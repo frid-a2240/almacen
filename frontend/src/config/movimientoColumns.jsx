@@ -1,11 +1,6 @@
 import Thumbnail from '../components/Thumbnail.jsx'
 import { formatoFecha, formatoMoneda } from '../utils/formatters.js'
 
-/**
- * Set completo de columnas para la tabla "Related CONTROL DE RESGUARDOs",
- * igual al que muestra AppSheet en su vista inline (Fecha Movimiento ... Costo Unitario).
- * Se usa en los detail panels de PRODUCTOS, EMPLEADOS, DEPARTAMENTO y CLASE FAMILIA.
- */
 export function columnasMovimientoCompletas() {
   return [
     { field: 'fecha_movimiento', headerName: 'Fecha Movimiento', renderCell: (m) => formatoFecha(m.fecha_movimiento) },
@@ -22,7 +17,7 @@ export function columnasMovimientoCompletas() {
     { field: 'descripcion', headerName: 'Descripcion' },
     { field: 'udm', headerName: 'UDM' },
     { field: 'numero_economico', headerName: 'Numero Economico' },
-    { field: 'clase_familia', headerName: 'Clase / Familia' },
+    { field: 'clase_familia', headerName: 'Clase / Familia' }, 
     { field: 'cantidad', headerName: 'Cantidad' },
     { field: 'foto_producto_snapshot', headerName: 'Foto Producto', renderCell: (m) => <Thumbnail src={m.foto_producto_snapshot} size={32} /> },
     { field: 'foto_numero_serie', headerName: 'Foto # Numero Serie', renderCell: (m) => <Thumbnail src={m.foto_numero_serie} size={32} /> },

@@ -1,0 +1,488 @@
+
+> tools-id-isp-warehouse@0.1.0 dev
+> vite
+
+
+  [32m[1mVITE[22m v8.2.1[39m  [2mready in [0m[1m1919[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[2m8:04:27 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m8:50:50 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/MovimientoFormDialog.jsx[22m
+[2m8:50:50 a.m.[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mCapacitor plugin "Printer" already registered. Cannot register plugins twice.
+[2m8:54:28 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:00:31 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/ProductosPage.jsx, /src/pages/StockInventoryPage.jsx, /src/pages/DepartamentoPage.jsx, /src/pages/ClaseFamiliaPage.jsx, /src/pages/ControlResguardoPage.jsx, /src/pages/ReporteSalidasPage.jsx, /src/pages/EmpleadosPage.jsx, /src/components/FilterPanel.jsx[22m
+[2m9:00:34 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/ProductosPage.jsx, /src/pages/StockInventoryPage.jsx, /src/pages/DepartamentoPage.jsx, /src/pages/ClaseFamiliaPage.jsx, /src/pages/ControlResguardoPage.jsx, /src/pages/ReporteSalidasPage.jsx, /src/pages/EmpleadosPage.jsx, /src/components/FilterPanel.jsx[22m
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] ReferenceError: Hadodjkdoidi is not defined
+    at http://localhost:5173/src/utils/filters.js?t=1789401634131:37:1
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/pages/ControlResguardoPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] ReferenceError: Hadodjkdoidi is not defined
+    at http://localhost:5173/src/utils/filters.js?t=1789401634131:37:1
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/pages/DepartamentoPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] ReferenceError: Hadodjkdoidi is not defined
+    at http://localhost:5173/src/utils/filters.js?t=1789401634131:37:1
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/pages/ReporteSalidasPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] ReferenceError: Hadodjkdoidi is not defined
+    at http://localhost:5173/src/utils/filters.js?t=1789401634131:37:1
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/pages/EmpleadosPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] ReferenceError: Hadodjkdoidi is not defined
+    at http://localhost:5173/src/utils/filters.js?t=1789401634131:37:1
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/pages/ProductosPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] ReferenceError: Hadodjkdoidi is not defined
+    at http://localhost:5173/src/utils/filters.js?t=1789401634131:37:1
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/pages/ClaseFamiliaPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] ReferenceError: Hadodjkdoidi is not defined
+    at http://localhost:5173/src/utils/filters.js?t=1789401634131:37:1
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/pages/StockInventoryPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] ReferenceError: Hadodjkdoidi is not defined
+    at http://localhost:5173/src/utils/filters.js?t=1789401634131:37:1
+[2m9:00:34 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/FilterPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:00:37 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/ProductosPage.jsx, /src/pages/StockInventoryPage.jsx, /src/pages/DepartamentoPage.jsx, /src/pages/ClaseFamiliaPage.jsx, /src/pages/ControlResguardoPage.jsx, /src/pages/ReporteSalidasPage.jsx, /src/pages/EmpleadosPage.jsx, /src/components/FilterPanel.jsx[22m
+[2m9:18:02 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:18:04 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:18:05 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:18:05 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:13 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m[38;5;249m [0m}
+ [38;5;240m   │[0m             ┬  
+ [38;5;240m   │[0m             ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:18:05 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:13 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m[38;5;249m [0m}
+ [38;5;240m   │[0m             ┬  
+ [38;5;240m   │[0m             ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:18:05 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:13 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m[38;5;249m [0m}
+ [38;5;240m   │[0m             ┬  
+ [38;5;240m   │[0m             ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:18:05 a.m.[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:13 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m[38;5;249m [0m}
+ [38;5;240m   │[0m             ┬  
+ [38;5;240m   │[0m             ╰── 
+[38;5;246m────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+      at transformWithOxc (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:20619:26)
+[2m9:18:05 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:13 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m[38;5;249m [0m}
+ [38;5;240m   │[0m             ┬  
+ [38;5;240m   │[0m             ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:18:05 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/DepartamentoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:18:05 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ProductoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:18:05 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ClaseFamiliaDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:18:05 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/EmpleadoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:18:09 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:18:11 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:18:13 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:18:14 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:18:20 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:18:23 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:18:23 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:3 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m   ┬  
+ [38;5;240m   │[0m   ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:18:23 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:3 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m   ┬  
+ [38;5;240m   │[0m   ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:18:23 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:3 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m   ┬  
+ [38;5;240m   │[0m   ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:18:23 a.m.[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:3 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m   ┬  
+ [38;5;240m   │[0m   ╰── 
+[38;5;246m────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+      at transformWithOxc (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:20619:26)
+[2m9:18:23 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:3 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m   ┬  
+ [38;5;240m   │[0m   ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:18:23 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ProductoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:18:23 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ClaseFamiliaDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:18:23 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/DepartamentoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:18:23 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/EmpleadoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:18:28 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:37:55 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:37:57 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:38:02 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:38:04 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:38:04 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:14 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m[38;5;249m [0m}
+ [38;5;240m   │[0m              ┬  
+ [38;5;240m   │[0m              ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:38:04 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:14 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m[38;5;249m [0m}
+ [38;5;240m   │[0m              ┬  
+ [38;5;240m   │[0m              ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:38:04 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:14 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m[38;5;249m [0m}
+ [38;5;240m   │[0m              ┬  
+ [38;5;240m   │[0m              ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:38:04 a.m.[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:14 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m[38;5;249m [0m}
+ [38;5;240m   │[0m              ┬  
+ [38;5;240m   │[0m              ╰── 
+[38;5;246m────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+      at transformWithOxc (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:20619:26)
+[2m9:38:04 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:14 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m[38;5;249m [0m}
+ [38;5;240m   │[0m              ┬  
+ [38;5;240m   │[0m              ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:38:04 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ClaseFamiliaDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:38:04 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ProductoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:38:04 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/DepartamentoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:38:04 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/EmpleadoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:38:05 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:38:10 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:38:16 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:38:29 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:38:30 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:38:30 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:5 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m     ┬  
+ [38;5;240m   │[0m     ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:38:30 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:5 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m     ┬  
+ [38;5;240m   │[0m     ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:38:30 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:5 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m     ┬  
+ [38;5;240m   │[0m     ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:38:30 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:5 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m     ┬  
+ [38;5;240m   │[0m     ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:38:30 a.m.[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:5 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m     ┬  
+ [38;5;240m   │[0m     ╰── 
+[38;5;246m────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+      at transformWithOxc (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m9:38:30 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/EmpleadoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:38:30 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ClaseFamiliaDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:38:30 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ProductoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:38:30 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/DepartamentoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:38:33 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:53:37 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:53:39 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:53:43 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:55:29 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:55:30 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:55:54 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:55:58 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:55:58 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:13 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m}
+ [38;5;240m   │[0m             ┬  
+ [38;5;240m   │[0m             ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:55:58 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:13 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m}
+ [38;5;240m   │[0m             ┬  
+ [38;5;240m   │[0m             ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:55:58 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:13 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m}
+ [38;5;240m   │[0m             ┬  
+ [38;5;240m   │[0m             ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:55:58 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:13 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m}
+ [38;5;240m   │[0m             ┬  
+ [38;5;240m   │[0m             ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:55:58 a.m.[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:13 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249me[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249m:[0m}
+ [38;5;240m   │[0m             ┬  
+ [38;5;240m   │[0m             ╰── 
+[38;5;246m────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+      at transformWithOxc (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m9:55:58 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ProductoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:55:58 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/DepartamentoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:55:58 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ClaseFamiliaDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:55:58 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/EmpleadoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:56:00 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:56:03 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:56:18 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:56:25 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:56:31 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:56:33 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:56:38 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:56:42 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:56:42 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:5 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m     ┬  
+ [38;5;240m   │[0m     ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:56:42 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:5 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m     ┬  
+ [38;5;240m   │[0m     ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:56:42 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:5 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m     ┬  
+ [38;5;240m   │[0m     ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:56:42 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:5 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m     ┬  
+ [38;5;240m   │[0m     ╰── 
+[38;5;246m────╯[0m
+
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+[2m9:56:42 a.m.[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+
+[31m[PARSE_ERROR] [0mUnexpected token
+    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m src/config/movimientoColumns.jsx:27:5 [38;5;246m][0m
+    [38;5;246m│[0m
+ [38;5;246m27 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m}
+ [38;5;240m   │[0m     ┬  
+ [38;5;240m   │[0m     ╰── 
+[38;5;246m────╯[0m
+[39m
+  Plugin: [35mvite:oxc[39m
+  File: [36mC:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/src/config/movimientoColumns.jsx[39m
+      at transformWithOxc (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4097:19)
+      at TransformPluginContext.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:4168:26)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:30851:51)
+      at async loadAndTransform (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:20619:26)
+      at async viteTransformMiddleware (file:///C:/Users/frida.arroyo/Documents/ProgramasISP/almacen/frontend/node_modules/vite/dist/node/chunks/node.js:25142:20)
+[2m9:56:42 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ProductoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:56:42 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/EmpleadoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:56:42 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/DepartamentoDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:56:42 a.m.[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/components/ClaseFamiliaDetailPanel.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m9:56:44 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m
+[2m9:57:43 a.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/ProductoDetailPanel.jsx, /src/components/DepartamentoDetailPanel.jsx, /src/components/ClaseFamiliaDetailPanel.jsx, /src/components/EmpleadoDetailPanel.jsx[22m

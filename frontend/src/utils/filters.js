@@ -21,6 +21,7 @@ function cumpleCampo(item, campo, filtro) {
   const valor = item[campo.key]
   switch (campo.tipo) {
     case 'enum':
+    
       if (!filtro.valores || filtro.valores.size === 0) return true
       return filtro.valores.has(String(valor ?? ''))
     case 'fecha':
@@ -38,7 +39,8 @@ function cumpleCampo(item, campo, filtro) {
   }
 }
 
-/** true si `item` cumple TODOS los filtros activos en `filtros` (AND entre campos). */
+
+/** true si `item` cumple con todos los filtros activos en `filtros` (AND entre campos). */
 export function cumpleFiltros(item, campos, filtros) {
   for (const campo of campos) {
     const filtro = filtros[campo.key]
