@@ -1,4 +1,5 @@
 import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Divider } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined'
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined'
 import AppsOutlinedIcon from '@mui/icons-material/AppsOutlined'
@@ -9,7 +10,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 export const DRAWER_WIDTH = 270
 export const APPBAR_HEIGHT = 64
 
-export default function Sidebar({ open = true }) {
+export default function Sidebar({ open = true, esMovil = false, onClose }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { usuario } = useAuth()
@@ -25,21 +26,32 @@ export default function Sidebar({ open = true }) {
     duration: theme.transitions.duration.enteringScreen,
   })
 
+  // En móvil el menú es un panel que se desliza encima del contenido (y se
+  // cierra solo al navegar); en escritorio es el panel fijo de siempre que
+  // empuja el contenido y se puede colapsar a ancho 0 con el botón hamburguesa.
+  const ir = (path) => {
+    navigate(path)
+    if (esMovil) onClose?.()
+  }
+
   return (
     <Drawer
-      variant="permanent"
+      variant={esMovil ? 'temporary' : 'permanent'}
+      open={esMovil ? open : true}
+      onClose={onClose}
+      ModalProps={esMovil ? { keepMounted: true } : undefined}
       sx={{
-        width: open ? DRAWER_WIDTH : 0,
+        width: !esMovil && open ? DRAWER_WIDTH : 0,
         flexShrink: 0,
         whiteSpace: 'nowrap',
         transition: transicion,
         '& .MuiDrawer-paper': {
-          width: open ? DRAWER_WIDTH : 0,
+          width: esMovil ? DRAWER_WIDTH : (open ? DRAWER_WIDTH : 0),
           boxSizing: 'border-box',
           top: APPBAR_HEIGHT,
           height: `calc(100% - ${APPBAR_HEIGHT}px)`,
           overflowX: 'hidden',
-          borderRight: open ? undefined : 'none',
+          borderRight: (esMovil || open) ? undefined : 'none',
           transition: transicion,
         },
       }}
@@ -51,13 +63,13 @@ export default function Sidebar({ open = true }) {
             <ListItemButton
               key={path}
               selected={activo}
-              onClick={() => navigate(path)}
+              onClick={() => ir(path)}
               sx={{
                 mx: 1,
                 borderRadius: 2,
                 mb: 0.5,
                 '&.Mui-selected': {
-                  bgcolor: 'rgba(0, 175, 170, 0.14)',
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.14),
                   '& .MuiListItemIcon-root, & .MuiListItemText-primary': {
                     color: 'primary.main',
                   },
@@ -69,7 +81,14 @@ export default function Sidebar({ open = true }) {
               </ListItemIcon>
               <ListItemText
                 primary={name}
-                slotProps={{ primary: { fontSize: 14, fontWeight: activo ? 600 : 400 } }}
+                sx={{
+                  '& .MuiListItemText-primary': {
+                    fontSize: 15,
+                    fontWeight: activo ? 600 : 400,
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                  },
+                }}
               />
             </ListItemButton>
           )
@@ -83,13 +102,13 @@ export default function Sidebar({ open = true }) {
             <ListItemButton
               key={name}
               selected={activo}
-              onClick={path ? () => navigate(path) : undefined}
+              onClick={path ? () => ir(path) : undefined}
               sx={{
                 mx: 1,
                 borderRadius: 2,
                 mb: 0.5,
                 '&.Mui-selected': {
-                  bgcolor: 'rgba(0, 175, 170, 0.14)',
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.14),
                   '& .MuiListItemIcon-root, & .MuiListItemText-primary': {
                     color: 'primary.main',
                   },
@@ -99,7 +118,7 @@ export default function Sidebar({ open = true }) {
               <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
                 <Icon fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary={name} slotProps={{ primary: { fontSize: 14, fontWeight: activo ? 600 : 400 } }} />
+              <ListItemText primary={name} slotProps={{ primary: { fontSize: 15, fontWeight: activo ? 600 : 400 } }} />
             </ListItemButton>
           )
         })}

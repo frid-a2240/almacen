@@ -4,18 +4,20 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined'
 import { useNavigate } from 'react-router-dom'
 import DetailPanel from './DetailPanel.jsx'
 import RelatedTable from './RelatedTable.jsx'
 import { imageURL } from '../api/client.js'
-import { descargarAsignadosExcel } from '../api/productos.js'
-import { formatoFecha, formatoMoneda } from '../utils/formatters.js'
+import { descargarAsignadosExcel, descargarHistoricoExcel } from '../api/productos.js'
+import { formatoFecha, formatoMoneda, antiguedadDesde } from '../utils/formatters.js'
 import { columnasMovimientoCompletas } from '../config/movimientoColumns.jsx'
 
 export default function ProductoDetailPanel({ producto, clases, movimientos, onEdit, onDelete, onClose }) {
   const navigate = useNavigate()
   const clase = clases.find((c) => c.id === producto.clase_familia_id)
   const [descargando, setDescargando] = useState(false)
+  const [descargandoHistorico, setDescargandoHistorico] = useState(false)
 
   const descargarAsignados = async () => {
     setDescargando(true)
@@ -23,6 +25,15 @@ export default function ProductoDetailPanel({ producto, clases, movimientos, onE
       await descargarAsignadosExcel(producto.codigo_sai_sku)
     } finally {
       setDescargando(false)
+    }
+  }
+
+  const descargarHistorico = async () => {
+    setDescargandoHistorico(true)
+    try {
+      await descargarHistoricoExcel(producto.codigo_sai_sku)
+    } finally {
+      setDescargandoHistorico(false)
     }
   }
 
@@ -34,13 +45,22 @@ export default function ProductoDetailPanel({ producto, clases, movimientos, onE
       onDelete={onDelete}
       onClose={onClose}
       extraActions={
-        <Tooltip title="Descargar quién la tiene asignada (Excel)">
-          <span>
-            <IconButton size="small" onClick={descargarAsignados} disabled={descargando} sx={{ color: 'text.secondary' }}>
-              <FileDownloadOutlinedIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
+        <>
+          <Tooltip title="Descargar quién la tiene asignada (Excel)">
+            <span>
+              <IconButton size="small" onClick={descargarAsignados} disabled={descargando} sx={{ color: 'text.secondary' }}>
+                <FileDownloadOutlinedIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Registro histórico (Excel)">
+            <span>
+              <IconButton size="small" onClick={descargarHistorico} disabled={descargandoHistorico} sx={{ color: 'text.secondary' }}>
+                <HistoryOutlinedIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </>
       }
       fields={[
         { label: 'Row ID', value: producto.appsheet_row_id },
@@ -72,6 +92,7 @@ export default function ProductoDetailPanel({ producto, clases, movimientos, onE
         { label: 'Mínimo', value: producto.minimo },
         { label: 'Máximo', value: producto.maximo },
         { label: 'Fecha de alta', value: formatoFecha(producto.fecha_de_alta) },
+        { label: 'Antigüedad', value: antiguedadDesde(producto.fecha_de_alta) },
         {
           label: 'Scan Document',
           value: producto.scan_document && (

@@ -13,9 +13,12 @@ import EmpleadoDetailPanel from '../components/EmpleadoDetailPanel.jsx'
 import EmpleadoFormDialog from '../components/EmpleadoFormDialog.jsx'
 import { listarEmpleados, eliminarEmpleado, movimientosDeEmpleado } from '../api/empleados.js'
 import { listarDepartamentos } from '../api/departamentos.js'
+import { mensajeDeError } from '../api/client.js'
 import { useSearch } from '../context/SearchContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { coincideBusqueda } from '../utils/search.js'
 import { cumpleFiltros, contarFiltrosActivos } from '../utils/filters.js'
+import useEsMovil from '../hooks/useEsMovil.js'
 
 const CAMPOS_BUSQUEDA = ['nombre_de_empleado', 'id_numero_empleado', 'puesto_posicion', 'departamento_nombre']
 
@@ -37,6 +40,9 @@ export default function EmpleadosPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { query } = useSearch()
+  const { usuario } = useAuth()
+  const esMovil = useEsMovil()
+  const puedeEscribir = !usuario?.solo_consulta
   const [empleados, setEmpleados] = useState([])
   const [departamentos, setDepartamentos] = useState([])
   const [cargando, setCargando] = useState(true)
@@ -49,6 +55,8 @@ export default function EmpleadosPage() {
   const [modoSeleccion, setModoSeleccion] = useState(false)
   const [marcados, setMarcados] = useState(new Set())
   const [confirmarBorrado, setConfirmarBorrado] = useState(false)
+  const [errorEliminar, setErrorEliminar] = useState('')
+  const [errorBorrado, setErrorBorrado] = useState('')
 
   const cargar = () => {
     setCargando(true)
@@ -87,10 +95,15 @@ export default function EmpleadosPage() {
 
   const confirmarEliminar = async () => {
     const id = aEliminar.id_numero_empleado
-    await eliminarEmpleado(id)
-    setAEliminar(null)
-    if (seleccionado?.id_numero_empleado === id) cerrarDetalle()
-    cargar()
+    setErrorEliminar('')
+    try {
+      await eliminarEmpleado(id)
+      setAEliminar(null)
+      if (seleccionado?.id_numero_empleado === id) cerrarDetalle()
+      cargar()
+    } catch (err) {
+      setErrorEliminar(mensajeDeError(err) || 'No se pudo eliminar el empleado.')
+    }
   }
 
   const toggleMarcado = (id) => {
@@ -107,7 +120,18 @@ export default function EmpleadosPage() {
   }
 
   const eliminarMarcados = async () => {
-    await Promise.all([...marcados].map((id) => eliminarEmpleado(id)))
+    setErrorBorrado('')
+    const resultados = await Promise.allSettled([...marcados].map((id) => eliminarEmpleado(id)))
+    const fallidos = resultados.filter((r) => r.status === 'rejected')
+    if (fallidos.length) {
+      setErrorBorrado(
+        fallidos.length === 1
+          ? mensajeDeError(fallidos[0].reason) || 'No se pudo eliminar uno de los empleados seleccionados.'
+          : `${fallidos.length} empleado(s) no se pudieron eliminar (probablemente todavía tienen herramienta en resguardo).`,
+      )
+      cargar()
+      return
+    }
     setConfirmarBorrado(false)
     cancelarSeleccion()
     cargar()
@@ -120,14 +144,22 @@ export default function EmpleadosPage() {
       ) : (
         <ViewHeader
           title="EMPLEADOS"
-          onAdd={abrirNuevo}
+          onAdd={puedeEscribir ? abrirNuevo : undefined}
           onFiltrar={() => setFiltroAbierto(true)}
           filtrosActivos={contarFiltrosActivos(CAMPOS_FILTRO, filtros)}
-          onSeleccionar={() => setModoSeleccion(true)}
+          onSeleccionar={puedeEscribir ? () => setModoSeleccion(true) : undefined}
         />
       )}
       <Box sx={{ flexGrow: 1, display: 'flex', minHeight: 0 }}>
-        <Box sx={{ width: seleccionado ? '42%' : '100%', borderRight: seleccionado ? '1px solid' : 'none', borderColor: 'divider', flexShrink: 0 }}>
+        <Box
+          sx={{
+            width: seleccionado ? (esMovil ? 0 : '42%') : '100%',
+            display: seleccionado && esMovil ? 'none' : 'block',
+            borderRight: seleccionado ? '1px solid' : 'none',
+            borderColor: 'divider',
+            flexShrink: 0,
+          }}
+        >
           {cargando ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
           ) : (
@@ -145,8 +177,8 @@ export default function EmpleadosPage() {
                   subtitle={e.departamento_nombre}
                   value={e.id_numero_empleado}
                   onView={() => verDetalle(e)}
-                  onEdit={() => abrirEditar(e)}
-                  onDelete={() => setAEliminar(e)}
+                  onEdit={puedeEscribir ? () => abrirEditar(e) : undefined}
+                  onDelete={puedeEscribir ? () => setAEliminar(e) : undefined}
                   modoSeleccion={modoSeleccion}
                   marcado={marcados.has(e.id_numero_empleado)}
                   onToggleMarcado={() => toggleMarcado(e.id_numero_empleado)}
@@ -170,8 +202,8 @@ export default function EmpleadosPage() {
               empleado={seleccionado}
               departamentos={departamentos}
               movimientos={movimientos}
-              onEdit={() => abrirEditar(seleccionado)}
-              onDelete={() => setAEliminar(seleccionado)}
+              onEdit={puedeEscribir ? () => abrirEditar(seleccionado) : undefined}
+              onDelete={puedeEscribir ? () => setAEliminar(seleccionado) : undefined}
               onClose={cerrarDetalle}
             />
           </Box>
@@ -190,7 +222,8 @@ export default function EmpleadosPage() {
         open={!!aEliminar}
         title="Eliminar empleado"
         message={`¿Eliminar a "${aEliminar?.nombre_de_empleado}"? Esta acción no se puede deshacer.`}
-        onCancel={() => setAEliminar(null)}
+        error={errorEliminar}
+        onCancel={() => { setAEliminar(null); setErrorEliminar('') }}
         onConfirm={confirmarEliminar}
       />
 
@@ -198,7 +231,8 @@ export default function EmpleadosPage() {
         open={confirmarBorrado}
         title="Eliminar empleados seleccionados"
         message={`¿Eliminar ${marcados.size} empleado(s) seleccionado(s)? Esta acción no se puede deshacer.`}
-        onCancel={() => setConfirmarBorrado(false)}
+        error={errorBorrado}
+        onCancel={() => { setConfirmarBorrado(false); setErrorBorrado('') }}
         onConfirm={eliminarMarcados}
       />
 

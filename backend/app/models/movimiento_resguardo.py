@@ -11,6 +11,11 @@ class MovimientoResguardo(Base):
     numero_de_vale = Column(String(30), nullable=True)
     foto_vale_de_salida = Column(String(500), nullable=True)
     tipo_movimiento = Column(String(10), nullable=False)  # 'SALIDA' | 'ENTRADA'
+    # Liga el ENTRADA (de quien entrega) con la SALIDA (de quien recibe) de
+    # UN traspaso — mismo valor en ambos renglones, para poder reconstruir
+    # el traspaso como un solo evento en vez de adivinar por observaciones.
+    # None en cualquier movimiento que no venga de un traspaso.
+    id_traspaso = Column(String(20), nullable=True)
 
     id_numero_empleado = Column(String(30), nullable=True)
     empleado_id = Column(String(30), ForeignKey("empleados.id_numero_empleado"), nullable=True)

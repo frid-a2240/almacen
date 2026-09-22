@@ -18,13 +18,20 @@ def guardar_archivo(archivo: UploadFile, tabla: str, row_key: str, columna: str)
         raise HTTPException(413, f"Archivo mayor a {settings.MAX_UPLOAD_SIZE_MB}MB")
 
     ext = Path(archivo.filename or "").suffix or ".bin"
+    return guardar_bytes(archivo.file.read(), tabla, row_key, columna, ext)
+
+
+def guardar_bytes(contenido: bytes, tabla: str, row_key: str, columna: str, ext: str) -> str:
+    """Igual que guardar_archivo, pero para contenido generado por el propio
+    backend (p.ej. el PDF del vale electrónico) en vez de un archivo subido
+    por el usuario."""
     dest_dir = UPLOAD_ROOT / tabla
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest_name = f"{_safe(row_key)}__{_safe(columna)}{ext}"
     dest_path = dest_dir / dest_name
 
     with open(dest_path, "wb") as f:
-        f.write(archivo.file.read())
+        f.write(contenido)
 
     # Ruta relativa a UPLOAD_DIR (lo que se guarda en BD y se resuelve como /uploads/<esto>)
     return f"{tabla}/{dest_name}"

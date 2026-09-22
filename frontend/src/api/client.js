@@ -50,4 +50,21 @@ export function thumbURL(rutaRelativa) {
   return `${API_URL}/thumb/${rutaRelativa}`
 }
 
+// El detail de un error de la API normalmente ya llega como JSON parseado
+// (err.response.data.detail) — pero en llamadas con responseType:
+// 'arraybuffer' (los PDF, p.ej. no-adeudo-pdf) axios entrega el cuerpo del
+// error SIN parsear, como ArrayBuffer crudo, así que hay que decodificarlo
+// a mano para poder mostrar el mensaje real ("todavía tiene N herramientas...").
+export function mensajeDeError(err) {
+  const data = err?.response?.data
+  if (data instanceof ArrayBuffer) {
+    try {
+      return JSON.parse(new TextDecoder().decode(data)).detail || null
+    } catch {
+      return null
+    }
+  }
+  return data?.detail || null
+}
+
 export default client

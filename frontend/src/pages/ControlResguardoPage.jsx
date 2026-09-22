@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Box, CircularProgress } from '@mui/material'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import HowToRegOutlinedIcon from '@mui/icons-material/HowToRegOutlined'
@@ -13,15 +13,18 @@ import FilterPanel from '../components/FilterPanel.jsx'
 import SelectionBar from '../components/SelectionBar.jsx'
 import MovimientoDetailPanel from '../components/MovimientoDetailPanel.jsx'
 import MovimientoFormDialog from '../components/MovimientoFormDialog.jsx'
+import TraspasoDialog from '../components/TraspasoDialog.jsx'
 import { listarMovimientos, eliminarMovimiento, obtenerValePdf } from '../api/movimientos.js'
 import { listarEmpleados } from '../api/empleados.js'
 import { listarProductos } from '../api/productos.js'
 import { listarDepartamentos } from '../api/departamentos.js'
 import { formatoFechaLarga } from '../utils/formatters.js'
 import { useSearch } from '../context/SearchContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { coincideBusqueda } from '../utils/search.js'
 import { cumpleFiltros, contarFiltrosActivos } from '../utils/filters.js'
 import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
+import useEsMovil from '../hooks/useEsMovil.js'
 
 const CAMPOS_BUSQUEDA = ['descripcion', 'nombre_de_empleado', 'codigo_sai_sku', 'numero_de_vale', 'id_numero_empleado']
 
@@ -53,6 +56,9 @@ export default function ControlResguardoPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { query } = useSearch()
+  const { usuario } = useAuth()
+  const esMovil = useEsMovil()
+  const puedeEscribir = !usuario?.solo_consulta
   const [movimientos, setMovimientos] = useState([])
   const [empleados, setEmpleados] = useState([])
   const [productos, setProductos] = useState([])
@@ -66,6 +72,35 @@ export default function ControlResguardoPage() {
   const [modoSeleccion, setModoSeleccion] = useState(false)
   const [marcados, setMarcados] = useState(new Set())
   const [confirmarBorrado, setConfirmarBorrado] = useState(false)
+  const [traspasando, setTraspasando] = useState(null)
+
+  // Saldo actual por empleado+producto (SALIDA - ENTRADA), calculado del
+  // mismo listado que ya se tiene en pantalla — para decidir, por rengón,
+  // si ese empleado tiene más de UNA herramienta activa (entonces el ícono
+  // es "Traspasar") o nada más esa (entonces es "Editar", restringido a
+  // nombre y firma). Mismo criterio que resguardo_actual_de en el backend.
+  const saldosPorEmpleado = useMemo(() => {
+    const mapa = new Map()
+    for (const m of movimientos) {
+      const sku = m.producto_sku || m.codigo_sai_sku
+      if (!m.empleado_id || !sku) continue
+      const signo = m.tipo_movimiento === 'SALIDA' ? 1 : m.tipo_movimiento === 'ENTRADA' ? -1 : 0
+      if (!signo) continue
+      if (!mapa.has(m.empleado_id)) mapa.set(m.empleado_id, new Map())
+      const porSku = mapa.get(m.empleado_id)
+      porSku.set(sku, (porSku.get(sku) || 0) + signo * Number(m.cantidad))
+    }
+    return mapa
+  }, [movimientos])
+
+  const saldoDe = (empleadoId, sku) => saldosPorEmpleado.get(empleadoId)?.get(sku) || 0
+  const herramientasActivasDe = (empleadoId) => {
+    const porSku = saldosPorEmpleado.get(empleadoId)
+    if (!porSku) return 0
+    let n = 0
+    for (const saldo of porSku.values()) if (saldo > 0) n++
+    return n
+  }
 
   // Empleados/productos/departamentos casi no cambian durante una sesión de
   // captura — solo se piden una vez al entrar. Guardar/editar/borrar un
@@ -153,14 +188,22 @@ export default function ControlResguardoPage() {
       ) : (
         <ViewHeader
           title="CONTROL DE RESGUARDO"
-          onAdd={abrirNuevo}
+          onAdd={puedeEscribir ? abrirNuevo : undefined}
           onFiltrar={() => setFiltroAbierto(true)}
           filtrosActivos={contarFiltrosActivos(CAMPOS_FILTRO, filtros)}
-          onSeleccionar={() => setModoSeleccion(true)}
+          onSeleccionar={puedeEscribir ? () => setModoSeleccion(true) : undefined}
         />
       )}
       <Box sx={{ flexGrow: 1, display: 'flex', minHeight: 0 }}>
-        <Box sx={{ width: seleccionado ? '42%' : '100%', borderRight: seleccionado ? '1px solid' : 'none', borderColor: 'divider', flexShrink: 0 }}>
+        <Box
+          sx={{
+            width: seleccionado ? (esMovil ? 0 : '42%') : '100%',
+            display: seleccionado && esMovil ? 'none' : 'block',
+            borderRight: seleccionado ? '1px solid' : 'none',
+            borderColor: 'divider',
+            flexShrink: 0,
+          }}
+        >
           {cargando ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
           ) : (
@@ -169,7 +212,19 @@ export default function ControlResguardoPage() {
               keyFn={(m) => m.row_id}
               groupBy={(m) => m.fecha_movimiento}
               groupLabel={(fecha) => formatoFechaLarga(fecha)}
-              renderRow={(m, key, style) => (
+              renderRow={(m, key, style) => {
+                const sku = m.producto_sku || m.codigo_sai_sku
+                // Una herramienta en resguardo (SALIDA con saldo activo) de un
+                // empleado que tiene MÁS de una: se traspasa (identifica cuál
+                // de varias se mueve). Si es la única que tiene, se edita
+                // (nombre/firma nada más) — traspasar no aplicaría a nada.
+                const esTraspasable = (
+                  puedeEscribir
+                  && m.tipo_movimiento === 'SALIDA'
+                  && saldoDe(m.empleado_id, sku) > 0
+                  && herramientasActivasDe(m.empleado_id) > 1
+                )
+                return (
                 <DeckListRow
                   key={key}
                   style={style}
@@ -179,9 +234,10 @@ export default function ControlResguardoPage() {
                   subtitle={m.nombre_de_empleado}
                   value={m.cantidad}
                   onView={() => verDetalle(m)}
-                  onEdit={() => abrirEditar(m)}
-                  onDelete={() => setAEliminar(m)}
-                  onReprint={m.tipo_movimiento === 'SALIDA' ? () => reimprimirVale(m) : undefined}
+                  onEdit={!puedeEscribir || esTraspasable ? undefined : () => abrirEditar(m)}
+                  onTraspaso={esTraspasable ? () => setTraspasando(m) : undefined}
+                  onDelete={puedeEscribir ? () => setAEliminar(m) : undefined}
+                  onReprint={puedeEscribir && m.tipo_movimiento === 'SALIDA' ? () => reimprimirVale(m) : undefined}
                   modoSeleccion={modoSeleccion}
                   marcado={marcados.has(m.row_id)}
                   onToggleMarcado={() => toggleMarcado(m.row_id)}
@@ -207,7 +263,8 @@ export default function ControlResguardoPage() {
                     { icon: MenuBookOutlinedIcon, title: 'Ver detalle', onClick: () => verDetalle(m) },
                   ]}
                 />
-              )}
+                )
+              }}
             />
           )}
         </Box>
@@ -217,9 +274,18 @@ export default function ControlResguardoPage() {
             <MovimientoDetailPanel
               movimiento={seleccionado}
               departamentos={departamentos}
-              onEdit={() => abrirEditar(seleccionado)}
-              onDelete={() => setAEliminar(seleccionado)}
+              onEdit={puedeEscribir ? () => abrirEditar(seleccionado) : undefined}
+              onDelete={puedeEscribir ? () => setAEliminar(seleccionado) : undefined}
               onClose={cerrarDetalle}
+              movimientoRelacionado={
+                seleccionado.id_traspaso
+                  ? movimientos.find((m) => m.id_traspaso === seleccionado.id_traspaso && m.row_id !== seleccionado.row_id)
+                  : null
+              }
+              onVerRelacionado={() => {
+                const par = movimientos.find((m) => m.id_traspaso === seleccionado.id_traspaso && m.row_id !== seleccionado.row_id)
+                if (par) verDetalle(par)
+              }}
             />
           </Box>
         )}
@@ -232,6 +298,15 @@ export default function ControlResguardoPage() {
         empleados={empleados}
         productos={productos}
         onSaved={() => { setDialogoAbierto(false); refrescarMovimientos() }}
+      />
+
+      <TraspasoDialog
+        open={!!traspasando}
+        onClose={() => setTraspasando(null)}
+        movimiento={traspasando}
+        empleados={empleados}
+        saldoActual={traspasando ? saldoDe(traspasando.empleado_id, traspasando.producto_sku || traspasando.codigo_sai_sku) : null}
+        onDone={() => { setTraspasando(null); refrescarMovimientos() }}
       />
 
       <ConfirmDialog

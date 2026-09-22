@@ -29,3 +29,15 @@ export const descargarAsignadosExcel = async (sku) => {
   enlace.remove()
   URL.revokeObjectURL(url)
 }
+
+export const descargarHistoricoExcel = async (sku) => {
+  const respuesta = await client.get(`/productos/${sku}/historico-excel`, { responseType: 'blob' })
+  const url = URL.createObjectURL(respuesta.data)
+  const enlace = document.createElement('a')
+  enlace.href = url
+  enlace.download = `historico_${sku}.xlsx`
+  document.body.appendChild(enlace)
+  enlace.click()
+  enlace.remove()
+  URL.revokeObjectURL(url)
+}

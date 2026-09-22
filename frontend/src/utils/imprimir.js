@@ -31,17 +31,35 @@ export function abrirVentanaImpresion() {
  * el diálogo nativo de impresión de Android. En el navegador (dashboard web)
  * usa la pestaña de abrirVentanaImpresion() (o abre una nueva si no se le
  * pasó) y dispara el diálogo de impresión ahí.
+ *
+ * `opciones.duplex`: true premarca "Imprimir a doble cara" en el diálogo
+ * nativo de Android (solo ahí — el navegador de escritorio no tiene forma
+ * de premarcarlo). Se usa en documentos pensados como hoja de doble cara,
+ * como la baja de herramienta (tabla al frente, fotos al reverso).
  */
-export async function imprimirPdf(arrayBuffer, nombre, ventanaPrevia) {
+export async function imprimirPdf(arrayBuffer, nombre, ventanaPrevia, opciones = {}) {
   if (esNativo) {
-    await Printer.printPdf({ base64: comoBase64(arrayBuffer), jobName: nombre })
+    await Printer.printPdf({ base64: comoBase64(arrayBuffer), jobName: nombre, duplex: !!opciones.duplex })
     return
   }
 
   const blob = new Blob([arrayBuffer], { type: 'application/pdf' })
   const url = URL.createObjectURL(blob)
   const ventana = ventanaPrevia || window.open(url, '_blank')
-  if (!ventana) return
+  if (!ventana) {
+    // El navegador bloqueó la ventana emergente (pasa incluso con el
+    // window.open() disparado en el mismo clic, según el navegador/sus
+    // permisos) — en vez de quedarse sin ninguna manera de ver/imprimir el
+    // documento, se descarga el PDF directo (una descarga normal nunca la
+    // bloquea un bloqueador de pop-ups).
+    const enlace = document.createElement('a')
+    enlace.href = url
+    enlace.download = `${nombre}.pdf`
+    document.body.appendChild(enlace)
+    enlace.click()
+    enlace.remove()
+    return 'descargado'
+  }
   ventana.addEventListener('load', () => {
     // El evento "load" de la pestaña dispara en cuanto el visor de PDF del
     // navegador arranca, no cuando terminó de renderizar la página (imágenes
@@ -51,4 +69,5 @@ export async function imprimirPdf(arrayBuffer, nombre, ventanaPrevia) {
     setTimeout(() => ventana.print(), 700)
   })
   if (ventanaPrevia) ventana.location = url
+  return 'impreso'
 }

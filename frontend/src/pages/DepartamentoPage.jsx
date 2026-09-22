@@ -13,8 +13,10 @@ import {
   listarDepartamentos, eliminarDepartamento, empleadosDeDepartamento, movimientosDeDepartamento,
 } from '../api/departamentos.js'
 import { useSearch } from '../context/SearchContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { coincideBusqueda } from '../utils/search.js'
 import { cumpleFiltros, contarFiltrosActivos } from '../utils/filters.js'
+import useEsMovil from '../hooks/useEsMovil.js'
 
 const CAMPOS_BUSQUEDA = ['departamento', 'encargado_departamento']
 
@@ -28,6 +30,9 @@ const CAMPOS_FILTRO = [
 export default function DepartamentoPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { query } = useSearch()
+  const { usuario } = useAuth()
+  const esMovil = useEsMovil()
+  const puedeEscribir = !usuario?.solo_consulta
   const [departamentos, setDepartamentos] = useState([])
   const [cargando, setCargando] = useState(true)
   const [dialogoAbierto, setDialogoAbierto] = useState(false)
@@ -106,14 +111,22 @@ export default function DepartamentoPage() {
       ) : (
         <ViewHeader
           title="DEPARTAMENTO"
-          onAdd={abrirNuevo}
+          onAdd={puedeEscribir ? abrirNuevo : undefined}
           onFiltrar={() => setFiltroAbierto(true)}
           filtrosActivos={contarFiltrosActivos(CAMPOS_FILTRO, filtros)}
-          onSeleccionar={() => setModoSeleccion(true)}
+          onSeleccionar={puedeEscribir ? () => setModoSeleccion(true) : undefined}
         />
       )}
       <Box sx={{ flexGrow: 1, display: 'flex', minHeight: 0 }}>
-        <Box sx={{ width: seleccionado ? '42%' : '100%', borderRight: seleccionado ? '1px solid' : 'none', borderColor: 'divider', flexShrink: 0 }}>
+        <Box
+          sx={{
+            width: seleccionado ? (esMovil ? 0 : '42%') : '100%',
+            display: seleccionado && esMovil ? 'none' : 'block',
+            borderRight: seleccionado ? '1px solid' : 'none',
+            borderColor: 'divider',
+            flexShrink: 0,
+          }}
+        >
           {cargando ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
           ) : (
@@ -130,8 +143,8 @@ export default function DepartamentoPage() {
                   subtitle={d.encargado_departamento}
                   value={`${d.num_empleados} empleados`}
                   onView={() => verDetalle(d)}
-                  onEdit={() => abrirEditar(d)}
-                  onDelete={() => setAEliminar(d)}
+                  onEdit={puedeEscribir ? () => abrirEditar(d) : undefined}
+                  onDelete={puedeEscribir ? () => setAEliminar(d) : undefined}
                   modoSeleccion={modoSeleccion}
                   marcado={marcados.has(d.id)}
                   onToggleMarcado={() => toggleMarcado(d.id)}
@@ -147,8 +160,8 @@ export default function DepartamentoPage() {
               departamento={seleccionado}
               empleados={empleadosRel}
               movimientos={movimientosRel}
-              onEdit={() => abrirEditar(seleccionado)}
-              onDelete={() => setAEliminar(seleccionado)}
+              onEdit={puedeEscribir ? () => abrirEditar(seleccionado) : undefined}
+              onDelete={puedeEscribir ? () => setAEliminar(seleccionado) : undefined}
               onClose={cerrarDetalle}
             />
           </Box>

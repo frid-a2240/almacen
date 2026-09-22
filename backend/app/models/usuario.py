@@ -10,6 +10,9 @@ class Usuario(Base):
     nombre = Column(String(200), nullable=False)
     password_hash = Column(String(255), nullable=False)
     es_admin = Column(Boolean, default=False, nullable=False)
+    # Usuario de solo consulta: puede ver todo y descargar los Excel, pero no
+    # crear/editar/borrar nada ni imprimir vales (ver deps_auth.bloquear_solo_consulta).
+    solo_consulta = Column(Boolean, default=False, nullable=False)
     activo = Column(Boolean, default=True, nullable=False)
     creado_en = Column(DateTime(timezone=True), server_default=func.now())
 

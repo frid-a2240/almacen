@@ -14,8 +14,10 @@ import { listarStockInventory, eliminarProducto, movimientosDeProducto } from '.
 import { listarClasesFamilia } from '../api/clasesFamilia.js'
 import { formatoMoneda } from '../utils/formatters.js'
 import { useSearch } from '../context/SearchContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { coincideBusqueda } from '../utils/search.js'
 import { cumpleFiltros, contarFiltrosActivos } from '../utils/filters.js'
+import useEsMovil from '../hooks/useEsMovil.js'
 
 const CAMPOS_BUSQUEDA = ['descripcion', 'codigo_sai_sku', 'ubicacion', 'almacen', 'clase_familia_nombre']
 
@@ -36,6 +38,9 @@ const CAMPOS_FILTRO = [
 export default function StockInventoryPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { query } = useSearch()
+  const { usuario } = useAuth()
+  const esMovil = useEsMovil()
+  const puedeEscribir = !usuario?.solo_consulta
   const [productos, setProductos] = useState([])
   const [clases, setClases] = useState([])
   const [cargando, setCargando] = useState(true)
@@ -124,11 +129,19 @@ export default function StockInventoryPage() {
           title="STOCK INVENTORY"
           onFiltrar={() => setFiltroAbierto(true)}
           filtrosActivos={contarFiltrosActivos(CAMPOS_FILTRO, filtros)}
-          onSeleccionar={() => setModoSeleccion(true)}
+          onSeleccionar={puedeEscribir ? () => setModoSeleccion(true) : undefined}
         />
       )}
       <Box sx={{ flexGrow: 1, display: 'flex', minHeight: 0 }}>
-        <Box sx={{ width: seleccionado ? '55%' : '100%', minWidth: 0, borderRight: seleccionado ? '1px solid' : 'none', borderColor: 'divider' }}>
+        <Box
+          sx={{
+            width: seleccionado ? (esMovil ? 0 : '55%') : '100%',
+            display: seleccionado && esMovil ? 'none' : 'block',
+            minWidth: 0,
+            borderRight: seleccionado ? '1px solid' : 'none',
+            borderColor: 'divider',
+          }}
+        >
           {cargando ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
           ) : (
@@ -149,8 +162,8 @@ export default function StockInventoryPage() {
               producto={seleccionado}
               clases={clases}
               movimientos={movimientos}
-              onEdit={() => setDialogoAbierto(true)}
-              onDelete={() => setAEliminar(seleccionado)}
+              onEdit={puedeEscribir ? () => setDialogoAbierto(true) : undefined}
+              onDelete={puedeEscribir ? () => setAEliminar(seleccionado) : undefined}
               onClose={() => setSearchParams({})}
             />
           </Box>

@@ -56,11 +56,12 @@ export default function UsuariosPage() {
                 borderBottom: '1px solid', borderColor: 'divider',
               }}
             >
-              <Avatar sx={{ bgcolor: '#2A2A2A' }}><PersonOutlineIcon /></Avatar>
+              <Avatar sx={{ bgcolor: (t) => (t.palette.mode === 'dark' ? '#2A2A2A' : '#EEF0F3') }}><PersonOutlineIcon /></Avatar>
               <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography fontWeight={600} fontSize={15}>{u.nombre}</Typography>
                   {u.es_admin && <Chip label="Administrador" size="small" color="primary" sx={{ height: 20, fontSize: 11 }} />}
+                  {u.solo_consulta && <Chip label="Solo consulta" size="small" sx={{ height: 20, fontSize: 11 }} />}
                   {!u.activo && <Chip label="Inactivo" size="small" sx={{ height: 20, fontSize: 11 }} />}
                 </Box>
                 <Typography fontSize={13} color="text.secondary">Número de control: {u.numero_control}</Typography>

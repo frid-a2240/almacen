@@ -59,6 +59,7 @@ export function contarFiltrosActivos(campos, filtros) {
     else if (campo.tipo === 'fecha' && (f.desde || f.hasta)) n++
     else if (campo.tipo === 'imagen' && f.valor) n++
     else if (campo.tipo === 'texto' && f.texto) n++
+    
   }
   return n
 }

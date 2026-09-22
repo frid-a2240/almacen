@@ -33,3 +33,26 @@ def asegurar_columnas():
             "ALTER TABLE movimientos_resguardo "
             "ADD COLUMN IF NOT EXISTS nombre_usuario_entrega VARCHAR(200)"
         ))
+        conn.execute(text(
+            "ALTER TABLE usuarios "
+            "ADD COLUMN IF NOT EXISTS solo_consulta BOOLEAN NOT NULL DEFAULT FALSE"
+        ))
+        conn.execute(text(
+            "ALTER TABLE movimientos_resguardo "
+            "ADD COLUMN IF NOT EXISTS id_traspaso VARCHAR(20)"
+        ))
+
+
+def asegurar_tablas_nuevas():
+    """A diferencia de las tablas de arriba (vienen de AppSheet, se editan con
+    ALTER TABLE), bajas_herramienta y sus tablas hijas son nuevas del todo —
+    create_all() de SQLAlchemy ya es idempotente (solo crea lo que falta), así
+    que basta con pasarle exactamente esas tablas sin tocar las demás."""
+    from app.models import (
+        BajaHerramienta, BajaHerramientaItem, BajaHerramientaFoto,
+        IncidenciaHerramienta, IncidenciaHerramientaItem,
+    )
+    Base.metadata.create_all(bind=engine, tables=[
+        BajaHerramienta.__table__, BajaHerramientaItem.__table__, BajaHerramientaFoto.__table__,
+        IncidenciaHerramienta.__table__, IncidenciaHerramientaItem.__table__,
+    ])

@@ -8,7 +8,7 @@ from app.schemas.departamento import DepartamentoOut, DepartamentoCreate, Depart
 from app.schemas.empleado import EmpleadoOut
 from app.schemas.movimiento_resguardo import MovimientoOut
 from app.services.uploads import guardar_archivo
-from app.deps_auth import usuario_actual
+from app.deps_auth import usuario_actual, bloquear_solo_consulta
 
 router = APIRouter(prefix="/departamentos", tags=["Departamentos"], dependencies=[Depends(usuario_actual)])
 
@@ -41,7 +41,7 @@ def obtener(departamento_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=DepartamentoOut, status_code=201)
-def crear(datos: DepartamentoCreate, db: Session = Depends(get_db)):
+def crear(datos: DepartamentoCreate, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     dep = Departamento(**datos.model_dump())
     db.add(dep)
     db.commit()
@@ -50,7 +50,7 @@ def crear(datos: DepartamentoCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{departamento_id}", response_model=DepartamentoOut)
-def actualizar(departamento_id: int, datos: DepartamentoUpdate, db: Session = Depends(get_db)):
+def actualizar(departamento_id: int, datos: DepartamentoUpdate, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     dep = db.get(Departamento, departamento_id)
     if not dep:
         raise HTTPException(404, "Departamento no encontrado")
@@ -63,7 +63,7 @@ def actualizar(departamento_id: int, datos: DepartamentoUpdate, db: Session = De
 
 
 @router.delete("/{departamento_id}", status_code=204)
-def eliminar(departamento_id: int, db: Session = Depends(get_db)):
+def eliminar(departamento_id: int, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     dep = db.get(Departamento, departamento_id)
     if not dep:
         raise HTTPException(404, "Departamento no encontrado")
@@ -101,7 +101,7 @@ def movimientos_de_departamento(departamento_id: int, db: Session = Depends(get_
 
 
 @router.post("/{departamento_id}/foto", response_model=DepartamentoOut)
-def subir_foto(departamento_id: int, archivo: UploadFile = File(...), db: Session = Depends(get_db)):
+def subir_foto(departamento_id: int, archivo: UploadFile = File(...), db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     dep = db.get(Departamento, departamento_id)
     if not dep:
         raise HTTPException(404, "Departamento no encontrado")

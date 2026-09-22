@@ -14,6 +14,7 @@ class UsuarioOut(BaseModel):
     numero_control: str
     nombre: str
     es_admin: bool
+    solo_consulta: bool
     activo: bool
 
 
@@ -27,10 +28,12 @@ class UsuarioCreate(BaseModel):
     nombre: str
     password: str
     es_admin: bool = False
+    solo_consulta: bool = False
 
 
 class UsuarioUpdate(BaseModel):
     nombre: Optional[str] = None
     password: Optional[str] = None
     es_admin: Optional[bool] = None
+    solo_consulta: Optional[bool] = None
     activo: Optional[bool] = None

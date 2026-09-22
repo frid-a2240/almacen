@@ -2,6 +2,7 @@ import client from './client.js'
 
 export const listarEmpleados = () => client.get('/empleados/').then((r) => r.data)
 export const movimientosDeEmpleado = (id) => client.get(`/empleados/${id}/movimientos`).then((r) => r.data)
+export const resguardoActualDeEmpleado = (id) => client.get(`/empleados/${id}/resguardo-actual`).then((r) => r.data)
 export const obtenerEmpleado = (id) => client.get(`/empleados/${id}`).then((r) => r.data)
 export const crearEmpleado = (datos) => client.post('/empleados/', datos).then((r) => r.data)
 export const actualizarEmpleado = (id, datos) => client.put(`/empleados/${id}`, datos).then((r) => r.data)
@@ -15,12 +16,27 @@ export const subirFotoEmpleado = (id, archivo) => {
 export const obtenerResguardoPdf = (id) =>
   client.get(`/empleados/${id}/resguardo-pdf`, { responseType: 'arraybuffer' }).then((r) => r.data)
 
+export const obtenerNoAdeudoPdf = (id) =>
+  client.get(`/empleados/${id}/no-adeudo-pdf`, { responseType: 'arraybuffer' }).then((r) => r.data)
+
 export const descargarResguardoExcel = async (id) => {
   const respuesta = await client.get(`/empleados/${id}/resguardo-excel`, { responseType: 'blob' })
   const url = URL.createObjectURL(respuesta.data)
   const enlace = document.createElement('a')
   enlace.href = url
   enlace.download = `inventario_${id}.xlsm`
+  document.body.appendChild(enlace)
+  enlace.click()
+  enlace.remove()
+  URL.revokeObjectURL(url)
+}
+
+export const descargarHistoricoExcel = async (id) => {
+  const respuesta = await client.get(`/empleados/${id}/historico-excel`, { responseType: 'blob' })
+  const url = URL.createObjectURL(respuesta.data)
+  const enlace = document.createElement('a')
+  enlace.href = url
+  enlace.download = `historico_${id}.xlsx`
   document.body.appendChild(enlace)
   enlace.click()
   enlace.remove()

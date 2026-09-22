@@ -12,8 +12,10 @@ import { listarReporteSalidas, eliminarMovimiento } from '../api/movimientos.js'
 import { listarDepartamentos } from '../api/departamentos.js'
 import { formatoFecha, formatoMoneda } from '../utils/formatters.js'
 import { useSearch } from '../context/SearchContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { coincideBusqueda } from '../utils/search.js'
 import { cumpleFiltros, contarFiltrosActivos } from '../utils/filters.js'
+import useEsMovil from '../hooks/useEsMovil.js'
 
 const CAMPOS_BUSQUEDA = ['nombre_de_empleado', 'id_numero_empleado', 'codigo_sai_sku', 'descripcion', 'departamento']
 
@@ -54,6 +56,9 @@ const columnas = [
 export default function ReporteSalidasPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { query } = useSearch()
+  const { usuario } = useAuth()
+  const esMovil = useEsMovil()
+  const puedeEscribir = !usuario?.solo_consulta
   const [movimientos, setMovimientos] = useState([])
   const [departamentos, setDepartamentos] = useState([])
   const [cargando, setCargando] = useState(true)
@@ -127,11 +132,19 @@ export default function ReporteSalidasPage() {
           title="REPORTE DE SALIDAS"
           onFiltrar={() => setFiltroAbierto(true)}
           filtrosActivos={contarFiltrosActivos(CAMPOS_FILTRO, filtros)}
-          onSeleccionar={() => setModoSeleccion(true)}
+          onSeleccionar={puedeEscribir ? () => setModoSeleccion(true) : undefined}
         />
       )}
       <Box sx={{ flexGrow: 1, display: 'flex', minHeight: 0 }}>
-        <Box sx={{ width: seleccionado ? '65%' : '100%', minWidth: 0, borderRight: seleccionado ? '1px solid' : 'none', borderColor: 'divider' }}>
+        <Box
+          sx={{
+            width: seleccionado ? (esMovil ? 0 : '65%') : '100%',
+            display: seleccionado && esMovil ? 'none' : 'block',
+            minWidth: 0,
+            borderRight: seleccionado ? '1px solid' : 'none',
+            borderColor: 'divider',
+          }}
+        >
           {cargando ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
           ) : (
@@ -151,8 +164,8 @@ export default function ReporteSalidasPage() {
             <MovimientoDetailPanel
               movimiento={seleccionado}
               departamentos={departamentos}
-              onEdit={() => abrirEditar(seleccionado)}
-              onDelete={() => setAEliminar(seleccionado)}
+              onEdit={puedeEscribir ? () => abrirEditar(seleccionado) : undefined}
+              onDelete={puedeEscribir ? () => setAEliminar(seleccionado) : undefined}
               onClose={cerrarDetalle}
             />
           </Box>

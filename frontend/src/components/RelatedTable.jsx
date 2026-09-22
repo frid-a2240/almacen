@@ -9,7 +9,7 @@ export default function RelatedTable({ title, columns, rows, keyFn, onRowClick }
     <Box sx={{ mt: 3 }}>
       <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
         {title}
-        <Box component="span" sx={{ bgcolor: '#2A2A2A', px: 1, borderRadius: 1, fontSize: 12 }}>
+        <Box component="span" sx={{ bgcolor: (t) => (t.palette.mode === 'dark' ? '#2A2A2A' : '#EEF0F3'), px: 1, borderRadius: 1, fontSize: 12 }}>
           {rows.length}
         </Box>
       </Typography>

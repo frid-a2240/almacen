@@ -38,6 +38,22 @@ class MovimientoUpdate(BaseModel):
     cantidad: Optional[Decimal] = None
     status: Optional[str] = None
     observaciones: Optional[str] = None
+    # Único campo editable cuando el movimiento es un vale de SALIDA (ver
+    # PUT /movimientos/{row_id}): al cambiarlo se regenera el PDF del vale
+    # (mismo folio) con el nombre actualizado.
+    nombre_usuario_entrega: Optional[str] = None
+
+
+class TraspasoCreate(BaseModel):
+    """Mueve UNA herramienta (row_id_origen) de quien la tiene actualmente a
+    otro empleado: se genera un ENTRADA para quien la entrega (baja su saldo)
+    y una SALIDA nueva —con folio nuevo— para quien la recibe (con su propio
+    vale para imprimir)."""
+    row_id_origen: str
+    id_numero_empleado_destino: str
+    cantidad: Optional[Decimal] = None  # en blanco: se traspasa el saldo completo de esa herramienta
+    fecha_movimiento: date
+    observaciones: Optional[str] = None
 
 
 class MovimientoOut(BaseModel):
@@ -48,6 +64,7 @@ class MovimientoOut(BaseModel):
     numero_de_vale: Optional[str] = None
     foto_vale_de_salida: Optional[str] = None
     tipo_movimiento: str
+    id_traspaso: Optional[str] = None
     id_numero_empleado: Optional[str] = None
     empleado_id: Optional[str] = None
     nombre_de_empleado: Optional[str] = None

@@ -24,6 +24,7 @@ def crear(datos: UsuarioCreate, db: Session = Depends(get_db), _admin: Usuario =
         nombre=datos.nombre,
         password_hash=hashear_password(datos.password),
         es_admin=datos.es_admin,
+        solo_consulta=datos.solo_consulta,
     )
     db.add(usuario)
     db.commit()

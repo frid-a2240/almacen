@@ -1,7 +1,9 @@
 import { Box, Typography, IconButton, Tooltip } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined'
+import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import Thumbnail from './Thumbnail.jsx'
 
@@ -22,6 +24,7 @@ export default function DeckListRow({
   onEdit,
   onDelete,
   onReprint,
+  onTraspaso,
   extraActions = [],
   selected = false,
   style,
@@ -41,9 +44,11 @@ export default function DeckListRow({
         py: 1.5,
         borderBottom: '1px solid',
         borderColor: 'divider',
-        bgcolor: (selected || marcadoActivo) ? 'rgba(0, 175, 170, 0.12)' : 'transparent',
+        bgcolor: (t) => (selected || marcadoActivo) ? alpha(t.palette.primary.main, 0.12) : 'transparent',
         boxSizing: 'border-box',
-        '&:hover': { bgcolor: (selected || marcadoActivo) ? 'rgba(0, 175, 170, 0.18)' : 'rgba(255,255,255,0.03)' },
+        '&:hover': {
+          bgcolor: (t) => (selected || marcadoActivo) ? alpha(t.palette.primary.main, 0.18) : t.palette.action.hover,
+        },
       }}
     >
       <Box
@@ -90,6 +95,13 @@ export default function DeckListRow({
           <Tooltip title="Reimprimir vale">
             <IconButton size="small" onClick={onReprint} sx={{ color: 'text.secondary' }}>
               <PrintOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {onTraspaso && (
+          <Tooltip title="Traspasar herramienta">
+            <IconButton size="small" onClick={onTraspaso} sx={{ color: 'text.secondary' }}>
+              <SwapHorizOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         )}

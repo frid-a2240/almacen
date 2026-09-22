@@ -7,11 +7,14 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models import MovimientoResguardo, Empleado, Producto, Usuario
-from app.schemas.movimiento_resguardo import MovimientoOut, MovimientoCreate, MovimientoUpdate, SalidaMultipleCreate
-from app.services.uploads import guardar_archivo
+from app.schemas.movimiento_resguardo import (
+    MovimientoOut, MovimientoCreate, MovimientoUpdate, SalidaMultipleCreate, TraspasoCreate,
+)
+from app.services.uploads import guardar_archivo, guardar_bytes
 from app.services.folio import siguiente_folio
 from app.services.vale_pdf import generar_vale_pdf
-from app.deps_auth import usuario_actual
+from app.services.resguardo import saldo_actual
+from app.deps_auth import usuario_actual, bloquear_solo_consulta
 
 router = APIRouter(prefix="/movimientos", tags=["Control de Resguardo"], dependencies=[Depends(usuario_actual)])
 
@@ -67,6 +70,7 @@ def _fila_movimiento(
     db: Session, *, empleado: Empleado, producto: Producto, usuario: Usuario,
     fecha_movimiento, numero_de_vale, tipo_movimiento: str, status: str,
     cantidad, numero_economico: str | None, observaciones: str | None,
+    id_traspaso: str | None = None,
 ) -> MovimientoResguardo:
     """Arma UN renglón (una herramienta) del movimiento — reusado tanto por el
     alta de un solo producto (ENTRADA, o edición) como por el vale con varias
@@ -77,6 +81,7 @@ def _fila_movimiento(
         fecha_movimiento=fecha_movimiento,
         numero_de_vale=numero_de_vale,
         tipo_movimiento=tipo_movimiento,
+        id_traspaso=id_traspaso,
         id_numero_empleado=empleado.id_numero_empleado,
         empleado_id=empleado.id_numero_empleado,
         nombre_de_empleado_snapshot=empleado.nombre_de_empleado,
@@ -103,8 +108,67 @@ def _fila_movimiento(
     )
 
 
+def _datos_vale(db: Session, mov: MovimientoResguardo) -> dict:
+    """Junta los datos de TODAS las herramientas que comparten el mismo vale
+    (mismo numero_de_vale + tipo_movimiento + empleado) para armar el PDF —
+    reusado al ver/imprimir el vale (GET vale-pdf), al guardarlo solo como
+    "Foto Vale de Salida" (_guardar_vale_generado) y al regenerarlo en una
+    edición (PUT)."""
+    if mov.numero_de_vale:
+        hermanos = (
+            db.query(MovimientoResguardo)
+            .filter(
+                MovimientoResguardo.numero_de_vale == mov.numero_de_vale,
+                MovimientoResguardo.tipo_movimiento == mov.tipo_movimiento,
+                MovimientoResguardo.id_numero_empleado == mov.id_numero_empleado,
+            )
+            .order_by(MovimientoResguardo.row_id)
+            .all()
+        )
+    else:
+        hermanos = [mov]
+
+    return {
+        "fecha_movimiento": mov.fecha_movimiento,
+        "numero_de_vale": mov.numero_de_vale,
+        "id_numero_empleado": mov.id_numero_empleado,
+        "nombre_de_empleado": mov.nombre_de_empleado,
+        "puesto_posicion": mov.puesto_posicion,
+        "departamento": mov.departamento,
+        "jefe_inmediato": mov.jefe_inmediato,
+        "nombre_usuario_entrega": mov.nombre_usuario_entrega,
+        "herramientas": [
+            {
+                "cantidad": h.cantidad,
+                "numero_economico": h.numero_economico,
+                "descripcion": h.descripcion,
+            }
+            for h in hermanos[:6]
+        ],
+    }, hermanos
+
+
+def _guardar_vale_generado(db: Session, filas: list[MovimientoResguardo]) -> None:
+    """Genera el PDF del vale (el mismo que se manda a imprimir) y lo guarda
+    como "Foto Vale de Salida" de cada renglón que comparte el folio — ya no
+    hace falta que alguien lo fotografíe a mano, el campo se llena solo con
+    el vale que realmente se imprimió."""
+    if not filas:
+        return
+    datos, hermanos = _datos_vale(db, filas[0])
+    contenido = generar_vale_pdf(datos)
+    for fila in hermanos:
+        fila.foto_vale_de_salida = guardar_bytes(
+            contenido, "CONTROL_DE_RESGUARDO", fila.row_id, "FOTO_VALE_DE_SALIDA", ".pdf",
+        )
+    db.commit()
+
+
 @router.post("/", response_model=MovimientoOut, status_code=201)
-def crear(datos: MovimientoCreate, db: Session = Depends(get_db), usuario: Usuario = Depends(usuario_actual)):
+def crear(
+    datos: MovimientoCreate, db: Session = Depends(get_db),
+    usuario: Usuario = Depends(usuario_actual), _=Depends(bloquear_solo_consulta),
+):
     if datos.tipo_movimiento not in ("SALIDA", "ENTRADA"):
         raise HTTPException(422, "tipo_movimiento debe ser SALIDA o ENTRADA")
 
@@ -132,12 +196,16 @@ def crear(datos: MovimientoCreate, db: Session = Depends(get_db), usuario: Usuar
     db.add(mov)
     db.commit()
     db.refresh(mov)
+    if mov.tipo_movimiento == "SALIDA":
+        _guardar_vale_generado(db, [mov])
+        db.refresh(mov)
     return mov
 
 
 @router.post("/salida-multiple", response_model=list[MovimientoOut], status_code=201)
 def crear_salida_multiple(
-    datos: SalidaMultipleCreate, db: Session = Depends(get_db), usuario: Usuario = Depends(usuario_actual),
+    datos: SalidaMultipleCreate, db: Session = Depends(get_db),
+    usuario: Usuario = Depends(usuario_actual), _=Depends(bloquear_solo_consulta),
 ):
     """Un solo vale (un solo folio) con varias herramientas (1 a 6) — cada
     herramienta queda como su propio renglón en la base de datos (igual que
@@ -173,51 +241,84 @@ def crear_salida_multiple(
     db.commit()
     for fila in filas:
         db.refresh(fila)
+    _guardar_vale_generado(db, filas)
+    for fila in filas:
+        db.refresh(fila)
     return filas
 
 
+@router.post("/traspaso", response_model=MovimientoOut, status_code=201)
+def traspaso(
+    datos: TraspasoCreate, db: Session = Depends(get_db),
+    usuario: Usuario = Depends(usuario_actual), _=Depends(bloquear_solo_consulta),
+):
+    """Mueve una herramienta de quien la tiene actualmente a otro empleado sin
+    pasar por "devolver y volver a capturar": se cierra el saldo de quien la
+    entrega con un ENTRADA y se abre uno nuevo —folio nuevo, vale nuevo para
+    imprimir— para quien la recibe."""
+    origen_mov = db.get(MovimientoResguardo, datos.row_id_origen)
+    if not origen_mov:
+        raise HTTPException(404, "Movimiento de origen no encontrado")
+    if origen_mov.tipo_movimiento != "SALIDA":
+        raise HTTPException(422, "Solo se puede traspasar una herramienta que está en resguardo (SALIDA)")
+
+    sku = origen_mov.producto_sku or origen_mov.codigo_sai_sku
+    empleado_origen = db.get(Empleado, origen_mov.id_numero_empleado)
+    empleado_destino = db.get(Empleado, datos.id_numero_empleado_destino)
+    producto = db.get(Producto, sku) if sku else None
+    if not empleado_origen or not empleado_destino:
+        raise HTTPException(404, "Empleado no encontrado")
+    if not producto:
+        raise HTTPException(404, "Producto no encontrado")
+    if empleado_origen.id_numero_empleado == empleado_destino.id_numero_empleado:
+        raise HTTPException(422, "El empleado de origen y destino no pueden ser el mismo")
+
+    saldo = saldo_actual(db, empleado_origen.id_numero_empleado, sku)
+    cantidad = datos.cantidad if datos.cantidad is not None else saldo
+    if cantidad <= 0 or cantidad > saldo:
+        raise HTTPException(422, f"Cantidad inválida: {empleado_origen.nombre_de_empleado} solo tiene {saldo} en resguardo")
+
+    obs_origen = f"Traspaso a {empleado_destino.nombre_de_empleado} ({empleado_destino.id_numero_empleado})"
+    obs_destino = f"Traspaso de {empleado_origen.nombre_de_empleado} ({empleado_origen.id_numero_empleado})"
+    if datos.observaciones:
+        obs_origen = f"{obs_origen} — {datos.observaciones}"
+        obs_destino = f"{obs_destino} — {datos.observaciones}"
+
+    # Mismo id_traspaso en los dos renglones — así se reconstruyen como UN
+    # solo evento (quién entrega + quién recibe) sin depender de adivinar por
+    # fecha/observaciones.
+    id_traspaso = uuid.uuid4().hex[:8]
+    fila_origen = _fila_movimiento(
+        db, empleado=empleado_origen, producto=producto, usuario=usuario,
+        fecha_movimiento=datos.fecha_movimiento, numero_de_vale=None,
+        tipo_movimiento="ENTRADA", status="ACTIVO",
+        cantidad=cantidad, numero_economico=origen_mov.numero_economico,
+        observaciones=obs_origen, id_traspaso=id_traspaso,
+    )
+    fila_destino = _fila_movimiento(
+        db, empleado=empleado_destino, producto=producto, usuario=usuario,
+        fecha_movimiento=datos.fecha_movimiento, numero_de_vale=siguiente_folio(db),
+        tipo_movimiento="SALIDA", status="ACTIVO",
+        cantidad=cantidad, numero_economico=origen_mov.numero_economico,
+        observaciones=obs_destino, id_traspaso=id_traspaso,
+    )
+    db.add_all([fila_origen, fila_destino])
+    db.commit()
+    db.refresh(fila_destino)
+    _guardar_vale_generado(db, [fila_destino])
+    db.refresh(fila_destino)
+    return fila_destino
+
+
 @router.get("/{row_id}/vale-pdf")
-def vale_pdf(row_id: str, db: Session = Depends(get_db)):
+def vale_pdf(row_id: str, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
+    """No es un Excel — a un usuario de solo consulta se le bloquea (ver
+    bloquear_solo_consulta): el vale es "imprimir", no "consultar"."""
     mov = db.get(MovimientoResguardo, row_id)
     if not mov:
         raise HTTPException(404, "Movimiento no encontrado")
 
-    # Todas las herramientas del mismo vale comparten numero_de_vale — se
-    # imprimen juntas en la misma hoja (hasta 6, lo que quepa en la plantilla).
-    # Si por alguna razón no hay numero_de_vale (vale viejo/manual), se
-    # imprime nada más esta herramienta sola.
-    if mov.numero_de_vale:
-        hermanos = (
-            db.query(MovimientoResguardo)
-            .filter(
-                MovimientoResguardo.numero_de_vale == mov.numero_de_vale,
-                MovimientoResguardo.tipo_movimiento == mov.tipo_movimiento,
-                MovimientoResguardo.id_numero_empleado == mov.id_numero_empleado,
-            )
-            .order_by(MovimientoResguardo.row_id)
-            .all()
-        )
-    else:
-        hermanos = [mov]
-
-    datos = {
-        "fecha_movimiento": mov.fecha_movimiento,
-        "numero_de_vale": mov.numero_de_vale,
-        "id_numero_empleado": mov.id_numero_empleado,
-        "nombre_de_empleado": mov.nombre_de_empleado,
-        "puesto_posicion": mov.puesto_posicion,
-        "departamento": mov.departamento,
-        "jefe_inmediato": mov.jefe_inmediato,
-        "nombre_usuario_entrega": mov.nombre_usuario_entrega,
-        "herramientas": [
-            {
-                "cantidad": h.cantidad,
-                "numero_economico": h.numero_economico,
-                "descripcion": h.descripcion,
-            }
-            for h in hermanos[:6]
-        ],
-    }
+    datos, _ = _datos_vale(db, mov)
     contenido = generar_vale_pdf(datos)
 
     nombre_archivo = f"vale_{mov.numero_de_vale or mov.row_id}.pdf"
@@ -229,19 +330,33 @@ def vale_pdf(row_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{row_id}", response_model=MovimientoOut)
-def actualizar(row_id: str, datos: MovimientoUpdate, db: Session = Depends(get_db)):
+def actualizar(row_id: str, datos: MovimientoUpdate, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     mov = db.get(MovimientoResguardo, row_id)
     if not mov:
         raise HTTPException(404, "Movimiento no encontrado")
-    for campo, valor in datos.model_dump(exclude_unset=True).items():
+
+    cambios = datos.model_dump(exclude_unset=True)
+    # En un vale de SALIDA, editar solo debe poder corregir el nombre de quien
+    # entrega (que se reimprime en el vale) y su firma (subida aparte, ver
+    # POST .../firma) — el resto del vale (folio, herramienta, empleado que
+    # recibe) no se toca desde aquí; para mover la herramienta a otra persona
+    # está el traspaso.
+    if mov.tipo_movimiento == "SALIDA":
+        cambios = {k: v for k, v in cambios.items() if k == "nombre_usuario_entrega"}
+
+    for campo, valor in cambios.items():
         setattr(mov, campo, valor)
     db.commit()
     db.refresh(mov)
+
+    if mov.tipo_movimiento == "SALIDA" and "nombre_usuario_entrega" in cambios:
+        _guardar_vale_generado(db, [mov])
+        db.refresh(mov)
     return mov
 
 
 @router.delete("/{row_id}", status_code=204)
-def eliminar(row_id: str, db: Session = Depends(get_db)):
+def eliminar(row_id: str, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     mov = db.get(MovimientoResguardo, row_id)
     if not mov:
         raise HTTPException(404, "Movimiento no encontrado")
@@ -261,12 +376,12 @@ def _subir(row_id: str, db: Session, archivo: UploadFile, columna_db: str, colum
 
 
 @router.post("/{row_id}/foto-vale", response_model=MovimientoOut)
-def subir_foto_vale(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db)):
+def subir_foto_vale(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     return _subir(row_id, db, archivo, "foto_vale_de_salida", "FOTO_VALE_DE_SALIDA")
 
 
 @router.post("/{row_id}/foto-producto", response_model=MovimientoOut)
-def subir_foto_producto(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db)):
+def subir_foto_producto(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     mov = _subir(row_id, db, archivo, "foto_producto_snapshot", "FOTO_PRODUCTO")
     # Primera foto real de esta herramienta: queda también como su foto de
     # referencia, para que la próxima salida ya no la pida de nuevo (no se
@@ -279,10 +394,10 @@ def subir_foto_producto(row_id: str, archivo: UploadFile = File(...), db: Sessio
 
 
 @router.post("/{row_id}/foto-numero-serie", response_model=MovimientoOut)
-def subir_foto_numero_serie(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db)):
+def subir_foto_numero_serie(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     return _subir(row_id, db, archivo, "foto_numero_serie", "FOTO_NUMERO_SERIE")
 
 
 @router.post("/{row_id}/firma", response_model=MovimientoOut)
-def subir_firma(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db)):
+def subir_firma(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     return _subir(row_id, db, archivo, "firma_recibido_conformidad", "FIRMA_DE_RECIBIDO_Y_CONFORMIDAD")

@@ -28,3 +28,13 @@ def usuario_admin(usuario: Usuario = Depends(usuario_actual)) -> Usuario:
     if not usuario.es_admin:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Se requieren permisos de administrador")
     return usuario
+
+
+def bloquear_solo_consulta(usuario: Usuario = Depends(usuario_actual)) -> Usuario:
+    """Corta cualquier acción que no sea consultar (crear/editar/borrar,
+    subir fotos/firma, imprimir vales) para un usuario de solo consulta —
+    a él/ella solo le queda navegar y descargar los Excel (esos endpoints
+    son GET normales, sin este Depends)."""
+    if usuario.solo_consulta:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Tu usuario es de solo consulta")
+    return usuario

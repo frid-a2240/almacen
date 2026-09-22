@@ -5,7 +5,7 @@ import {
 } from '@mui/material'
 import { crearUsuario, actualizarUsuario } from '../api/usuarios.js'
 
-const VACIO = { numero_control: '', nombre: '', password: '', es_admin: false, activo: true }
+const VACIO = { numero_control: '', nombre: '', password: '', es_admin: false, solo_consulta: false, activo: true }
 
 export default function UsuarioFormDialog({ open, onClose, onSaved, usuario }) {
   const [form, setForm] = useState(VACIO)
@@ -18,6 +18,7 @@ export default function UsuarioFormDialog({ open, onClose, onSaved, usuario }) {
       nombre: usuario.nombre,
       password: '',
       es_admin: usuario.es_admin,
+      solo_consulta: usuario.solo_consulta,
       activo: usuario.activo,
     } : VACIO)
   }, [open, usuario])
@@ -26,7 +27,7 @@ export default function UsuarioFormDialog({ open, onClose, onSaved, usuario }) {
     setGuardando(true)
     try {
       if (usuario) {
-        const payload = { nombre: form.nombre, es_admin: form.es_admin, activo: form.activo }
+        const payload = { nombre: form.nombre, es_admin: form.es_admin, solo_consulta: form.solo_consulta, activo: form.activo }
         if (form.password) payload.password = form.password
         await actualizarUsuario(usuario.id, payload)
       } else {
@@ -35,6 +36,7 @@ export default function UsuarioFormDialog({ open, onClose, onSaved, usuario }) {
           nombre: form.nombre,
           password: form.password,
           es_admin: form.es_admin,
+          solo_consulta: form.solo_consulta,
         })
       }
       onSaved()
@@ -69,8 +71,22 @@ export default function UsuarioFormDialog({ open, onClose, onSaved, usuario }) {
             helperText={usuario ? 'Déjalo en blanco para no cambiarla' : ''}
           />
           <FormControlLabel
-            control={<Switch checked={form.es_admin} onChange={(e) => setForm({ ...form, es_admin: e.target.checked })} />}
+            control={
+              <Switch
+                checked={form.es_admin}
+                onChange={(e) => setForm({ ...form, es_admin: e.target.checked, solo_consulta: e.target.checked ? false : form.solo_consulta })}
+              />
+            }
             label="Administrador (puede crear y editar usuarios)"
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={form.solo_consulta}
+                onChange={(e) => setForm({ ...form, solo_consulta: e.target.checked, es_admin: e.target.checked ? false : form.es_admin })}
+              />
+            }
+            label="Solo consulta (no puede crear, editar, borrar ni imprimir — solo ver y descargar Excel)"
           />
           {usuario && (
             <FormControlLabel

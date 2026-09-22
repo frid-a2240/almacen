@@ -1,4 +1,5 @@
 import { Box, Typography, IconButton, Button } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import CloseIcon from '@mui/icons-material/Close'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 
@@ -17,7 +18,7 @@ export default function SelectionBar({ cantidad, onCancelar, onEliminar }) {
         py: 2,
         borderBottom: '1px solid',
         borderColor: 'divider',
-        bgcolor: 'rgba(0, 175, 170, 0.08)',
+        bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>

@@ -40,6 +40,12 @@ public class PrinterPlugin extends Plugin {
     public void printPdf(PluginCall call) {
         String base64 = call.getString("base64");
         String jobName = call.getString("jobName", "documento");
+        // El vale/constancia son una sola cara — por default se manda "una
+        // sola cara" para que no haya que desmarcar el doble lado a mano
+        // cada vez. La baja de herramienta SÍ es una hoja de doble cara
+        // (tabla al frente, evidencia fotográfica al reverso), así que ahí
+        // el JS manda duplex=true para que salga premarcado.
+        boolean duplex = Boolean.TRUE.equals(call.getBoolean("duplex", false));
 
         if (base64 == null) {
             call.reject("Falta el PDF a imprimir");
@@ -59,12 +65,8 @@ public class PrinterPlugin extends Plugin {
                     call.reject("El sistema no tiene servicio de impresión");
                     return;
                 }
-                // El vale ya es una sola página (con las dos copias) — se
-                // manda "una sola cara" por default para que no haya que
-                // desmarcar el doble lado a mano cada vez. La impresora
-                // igual permite cambiarlo desde el propio diálogo.
                 PrintAttributes atributos = new PrintAttributes.Builder()
-                        .setDuplexMode(PrintAttributes.DUPLEX_MODE_NONE)
+                        .setDuplexMode(duplex ? PrintAttributes.DUPLEX_MODE_LONG_EDGE : PrintAttributes.DUPLEX_MODE_NONE)
                         .build();
                 printManager.print(jobName, new PdfDocumentAdapter(archivo, jobName), atributos);
                 call.resolve();

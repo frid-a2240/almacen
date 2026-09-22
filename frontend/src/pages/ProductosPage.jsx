@@ -14,8 +14,10 @@ import ProductoFormDialog from '../components/ProductoFormDialog.jsx'
 import { listarProductos, eliminarProducto, movimientosDeProducto } from '../api/productos.js'
 import { listarClasesFamilia } from '../api/clasesFamilia.js'
 import { useSearch } from '../context/SearchContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { coincideBusqueda } from '../utils/search.js'
 import { cumpleFiltros, contarFiltrosActivos } from '../utils/filters.js'
+import useEsMovil from '../hooks/useEsMovil.js'
 
 const CAMPOS_BUSQUEDA = ['descripcion', 'codigo_sai_sku', 'tool_id', 'ubicacion', 'numero_economico', 'almacen']
 
@@ -41,6 +43,9 @@ const CAMPOS_FILTRO = [
 export default function ProductosPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { query } = useSearch()
+  const { usuario } = useAuth()
+  const esMovil = useEsMovil()
+  const puedeEscribir = !usuario?.solo_consulta
   const [productos, setProductos] = useState([])
   const [clases, setClases] = useState([])
   const [cargando, setCargando] = useState(true)
@@ -124,14 +129,22 @@ export default function ProductosPage() {
       ) : (
         <ViewHeader
           title="PRODUCTOS"
-          onAdd={abrirNuevo}
+          onAdd={puedeEscribir ? abrirNuevo : undefined}
           onFiltrar={() => setFiltroAbierto(true)}
           filtrosActivos={contarFiltrosActivos(CAMPOS_FILTRO, filtros)}
-          onSeleccionar={() => setModoSeleccion(true)}
+          onSeleccionar={puedeEscribir ? () => setModoSeleccion(true) : undefined}
         />
       )}
       <Box sx={{ flexGrow: 1, display: 'flex', minHeight: 0 }}>
-        <Box sx={{ width: seleccionado ? '42%' : '100%', borderRight: seleccionado ? '1px solid' : 'none', borderColor: 'divider', flexShrink: 0 }}>
+        <Box
+          sx={{
+            width: seleccionado ? (esMovil ? 0 : '42%') : '100%',
+            display: seleccionado && esMovil ? 'none' : 'block',
+            borderRight: seleccionado ? '1px solid' : 'none',
+            borderColor: 'divider',
+            flexShrink: 0,
+          }}
+        >
           {cargando ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
           ) : (
@@ -153,8 +166,8 @@ export default function ProductosPage() {
                   }
                   value={p.ubicacion || p.almacen}
                   onView={() => verDetalle(p)}
-                  onEdit={() => abrirEditar(p)}
-                  onDelete={() => setAEliminar(p)}
+                  onEdit={puedeEscribir ? () => abrirEditar(p) : undefined}
+                  onDelete={puedeEscribir ? () => setAEliminar(p) : undefined}
                   modoSeleccion={modoSeleccion}
                   marcado={marcados.has(p.codigo_sai_sku)}
                   onToggleMarcado={() => toggleMarcado(p.codigo_sai_sku)}
@@ -173,8 +186,8 @@ export default function ProductosPage() {
               producto={seleccionado}
               clases={clases}
               movimientos={movimientos}
-              onEdit={() => abrirEditar(seleccionado)}
-              onDelete={() => setAEliminar(seleccionado)}
+              onEdit={puedeEscribir ? () => abrirEditar(seleccionado) : undefined}
+              onDelete={puedeEscribir ? () => setAEliminar(seleccionado) : undefined}
               onClose={cerrarDetalle}
             />
           </Box>

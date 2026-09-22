@@ -7,8 +7,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 
 from app.config import settings
-from app.database import engine, asegurar_columnas
-from app.routers import departamentos, clases_familia, empleados, productos, movimientos, auth, usuarios
+from app.database import engine, asegurar_columnas, asegurar_tablas_nuevas
+from app.routers import departamentos, clases_familia, empleados, productos, movimientos, auth, usuarios, dashboard, baja_herramienta, incidencia_herramienta
 from app.services.thumbnails import ruta_miniatura
 from app.services.folio import asegurar_secuencia
 
@@ -39,6 +39,7 @@ api.add_middleware(GZipMiddleware, minimum_size=1000)
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 asegurar_secuencia(engine)
 asegurar_columnas()
+asegurar_tablas_nuevas()
 # El prefijo de URL siempre es "/uploads" (el frontend lo asume fijo en
 # imageURL()), sin importar el valor de UPLOAD_DIR — que en el servidor es
 # una ruta absoluta de disco (D:\...\uploads), no algo usable como URL.
@@ -76,6 +77,9 @@ api.include_router(clases_familia.router)
 api.include_router(empleados.router)
 api.include_router(productos.router)
 api.include_router(movimientos.router)
+api.include_router(dashboard.router)
+api.include_router(baja_herramienta.router)
+api.include_router(incidencia_herramienta.router)
 
 
 # --- app envolvente: la que corre IIS en el servidor (ver runserver.py) ---

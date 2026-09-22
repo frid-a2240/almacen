@@ -2,6 +2,7 @@ import { Box, Typography, IconButton } from '@mui/material'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import HowToRegOutlinedIcon from '@mui/icons-material/HowToRegOutlined'
 import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined'
+import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined'
 import { useNavigate } from 'react-router-dom'
 import DetailPanel from './DetailPanel.jsx'
 import Thumbnail from './Thumbnail.jsx'
@@ -21,7 +22,9 @@ function ImagenCampo({ label, src, bg }) {
   )
 }
 
-export default function MovimientoDetailPanel({ movimiento: m, departamentos = [], onEdit, onDelete, onClose }) {
+export default function MovimientoDetailPanel({
+  movimiento: m, departamentos = [], onEdit, onDelete, onClose, movimientoRelacionado, onVerRelacionado,
+}) {
   const navigate = useNavigate()
   const depto = departamentos.find((d) => d.departamento === m.departamento)
 
@@ -36,6 +39,17 @@ export default function MovimientoDetailPanel({ movimiento: m, departamentos = [
         { label: 'Fecha Movimiento', value: formatoFecha(m.fecha_movimiento) },
         { label: 'Numero de Vale', value: m.numero_de_vale },
         { label: 'Tipo Movimiento', value: m.tipo_movimiento },
+        m.id_traspaso && {
+          label: 'Traspaso',
+          value: movimientoRelacionado
+            ? `${movimientoRelacionado.tipo_movimiento === 'SALIDA' ? 'Recibida por' : 'Entregada por'} ${movimientoRelacionado.nombre_de_empleado || ''}`
+            : 'Ver el otro lado del traspaso',
+          action: movimientoRelacionado && onVerRelacionado && (
+            <IconButton size="small" onClick={onVerRelacionado} title="Ir al otro lado del traspaso">
+              <SwapHorizOutlinedIcon fontSize="small" />
+            </IconButton>
+          ),
+        },
         {
           label: 'ID Numero Empleado / Nombre de Empleado',
           value: `${m.id_numero_empleado || ''} — ${m.nombre_de_empleado || ''}`,

@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField,
-  MenuItem, Stack, Autocomplete, Typography, Alert, IconButton,
+  MenuItem, Stack, Autocomplete, Typography, Alert, IconButton, Box,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import CloseIcon from '@mui/icons-material/Close'
 import dayjs from 'dayjs'
 import CampoFoto from './CampoFoto.jsx'
 import SignaturePad from './SignaturePad.jsx'
+import Thumbnail from './Thumbnail.jsx'
 import {
   crearMovimiento, crearSalidaMultiple, actualizarMovimiento, obtenerValePdf,
   subirFotoVale, subirFotoProductoMovimiento, subirFotoNumeroSerie, subirFirma,
@@ -32,8 +33,15 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
   const [fotoProducto, setFotoProducto] = useState(null)
   const [fotoNumeroSerie, setFotoNumeroSerie] = useState(null)
   const [firma, setFirma] = useState(null)
+  const [nombreEntrega, setNombreEntrega] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [aviso, setAviso] = useState('')
+
+  // Un vale de SALIDA ya hecho solo se puede corregir en el nombre de quien
+  // entrega y su firma — el resto (folio, herramienta, cantidad, a quién se
+  // le entregó) no se edita aquí; para mover la herramienta a otra persona
+  // está el traspaso (ver TraspasoDialog).
+  const esEdicionSalida = !!movimiento && movimiento.tipo_movimiento === 'SALIDA'
 
   useEffect(() => {
     if (!open) return
@@ -43,6 +51,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
     setFotoProducto(null)
     setFotoNumeroSerie(null)
     setFirma(null)
+    setNombreEntrega(movimiento?.nombre_usuario_entrega || '')
     setAviso('')
     setForm(movimiento ? {
       fecha_movimiento: movimiento.fecha_movimiento,
@@ -69,6 +78,23 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
   }
 
   const guardar = async () => {
+    if (esEdicionSalida) {
+      // Edición restringida: solo nombre y firma de entrega — el vale ya
+      // impreso (folio, herramienta, empleado) no cambia. El backend
+      // regenera solo el PDF ("Foto Vale de Salida") con el nombre nuevo.
+      setGuardando(true)
+      setAviso('')
+      try {
+        const rowId = movimiento.row_id
+        await actualizarMovimiento(rowId, { nombre_usuario_entrega: nombreEntrega })
+        if (firma) await subirFirma(rowId, firma)
+        onSaved(rowId)
+      } finally {
+        setGuardando(false)
+      }
+      return
+    }
+
     // El vale electrónico solo aplica a una SALIDA nueva. La pestaña de
     // impresión se abre AQUÍ, antes de cualquier await — si se abre después
     // de esperar el guardado/las fotos, el navegador ya no lo cuenta como
@@ -170,152 +196,201 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           {aviso && <Alert severity="warning">{aviso}</Alert>}
-          <TextField
-            label="Fecha Movimiento" required type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }}
-            value={form.fecha_movimiento}
-            onChange={(e) => setForm({ ...form, fecha_movimiento: e.target.value })}
-          />
-          <TextField
-            label="Número de vale" fullWidth
-            value={form.numero_de_vale}
-            onChange={(e) => setForm({ ...form, numero_de_vale: e.target.value })}
-            helperText={!movimiento ? 'En blanco: se asigna solo al guardar (folio consecutivo del vale electrónico)' : undefined}
-          />
-
-          <CampoFoto
-            label="Foto Vale de Salida"
-            thumb={fotoVale ? URL.createObjectURL(fotoVale) : movimiento?.foto_vale_de_salida}
-            onChange={setFotoVale}
-          />
-
-          <TextField
-            label="Tipo de movimiento" required select fullWidth
-            value={form.tipo_movimiento}
-            onChange={(e) => cambiarTipoMovimiento(e.target.value)}
-          >
-            <MenuItem value="SALIDA">SALIDA</MenuItem>
-            <MenuItem value="ENTRADA">ENTRADA</MenuItem>
-          </TextField>
-
-          {movimiento ? (
-            <Stack spacing={0.5}>
-              <Typography variant="caption" color="text.secondary">Nombre de Empleado</Typography>
-              <Typography>{movimiento.nombre_de_empleado}</Typography>
-            </Stack>
-          ) : (
-            <Autocomplete
-              options={empleados}
-              getOptionLabel={(e) => `${e.nombre_de_empleado} (${e.id_numero_empleado})`}
-              value={empleadoSel}
-              onChange={(_, v) => setEmpleadoSel(v)}
-              renderInput={(params) => <TextField {...params} label="Nombre de Empleado" required />}
-            />
-          )}
-
-          <TextField
-            label="Status" select fullWidth
-            value={form.status}
-            onChange={(e) => setForm({ ...form, status: e.target.value })}
-          >
-            <MenuItem value="ACTIVO">ACTIVO</MenuItem>
-            <MenuItem value="INACTIVO">INACTIVO</MenuItem>
-          </TextField>
-
-          {movimiento ? (
+          {esEdicionSalida ? (
             <>
+              <TextField label="Fecha Movimiento" value={form.fecha_movimiento} disabled fullWidth />
+              <TextField label="Número de vale" value={form.numero_de_vale} disabled fullWidth />
+              <Stack spacing={0.5}>
+                <Typography variant="caption" color="text.secondary">Nombre de Empleado</Typography>
+                <Typography>{movimiento.nombre_de_empleado}</Typography>
+              </Stack>
               <Stack spacing={0.5}>
                 <Typography variant="caption" color="text.secondary">Producto</Typography>
                 <Typography>{movimiento.descripcion}</Typography>
               </Stack>
               <Stack direction="row" spacing={2}>
-                <TextField
-                  label="Número económico" fullWidth
-                  value={form.numero_economico}
-                  onChange={(e) => setForm({ ...form, numero_economico: e.target.value })}
-                />
-                <TextField
-                  label="Cantidad" required type="number" fullWidth
-                  value={form.cantidad}
-                  onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
-                />
+                <TextField label="Número económico" value={form.numero_economico} disabled fullWidth />
+                <TextField label="Cantidad" value={form.cantidad} disabled fullWidth />
               </Stack>
+
+              <TextField
+                label="Nombre y Firma de Entrega" required fullWidth
+                value={nombreEntrega}
+                onChange={(e) => setNombreEntrega(e.target.value)}
+                helperText="Único dato que se puede corregir aquí. Para mover esta herramienta a otro empleado usa Traspasar, no editar."
+              />
+              <SignaturePad onChange={setFirma} />
+
+              {movimiento.foto_vale_de_salida && (
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Vale generado
+                  </Typography>
+                  <Box sx={{ mt: 0.5 }}>
+                    <Thumbnail src={movimiento.foto_vale_de_salida} shape="rounded" size={80} />
+                  </Box>
+                </Stack>
+              )}
+
+              <TextField label="Observaciones" value={form.observaciones} disabled fullWidth multiline minRows={2} />
             </>
           ) : (
-            <Stack spacing={1.5}>
-              {items.map((item, i) => (
-                <Stack key={i} spacing={1.5} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                  <Stack direction="row" spacing={1} alignItems="flex-start">
-                    <Autocomplete
-                      fullWidth
-                      options={productos}
-                      getOptionLabel={(p) => `${p.descripcion} (${p.codigo_sai_sku})`}
-                      value={item.producto}
-                      onChange={(_, v) => actualizarItem(i, { producto: v })}
-                      renderInput={(params) => (
-                        <TextField {...params} label={items.length > 1 ? `Producto ${i + 1}` : 'Producto'} required />
-                      )}
-                    />
-                    {items.length > 1 && (
-                      <IconButton size="small" onClick={() => quitarItem(i)} sx={{ mt: 1 }}>
-                        <CloseIcon fontSize="small" />
-                      </IconButton>
-                    )}
+            <>
+              <TextField
+                label="Fecha Movimiento" required type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }}
+                value={form.fecha_movimiento}
+                onChange={(e) => setForm({ ...form, fecha_movimiento: e.target.value })}
+              />
+              <TextField
+                label="Número de vale" fullWidth
+                value={form.numero_de_vale}
+                onChange={(e) => setForm({ ...form, numero_de_vale: e.target.value })}
+                helperText={!movimiento ? 'En blanco: se asigna solo al guardar (folio consecutivo del vale electrónico)' : undefined}
+              />
+
+              {movimiento && (
+                <CampoFoto
+                  label="Foto Vale de Salida"
+                  thumb={fotoVale ? URL.createObjectURL(fotoVale) : movimiento?.foto_vale_de_salida}
+                  onChange={setFotoVale}
+                />
+              )}
+
+              <TextField
+                label="Tipo de movimiento" required select fullWidth
+                value={form.tipo_movimiento}
+                onChange={(e) => cambiarTipoMovimiento(e.target.value)}
+              >
+                <MenuItem value="SALIDA">SALIDA</MenuItem>
+                <MenuItem value="ENTRADA">ENTRADA</MenuItem>
+              </TextField>
+
+              {movimiento ? (
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="text.secondary">Nombre de Empleado</Typography>
+                  <Typography>{movimiento.nombre_de_empleado}</Typography>
+                </Stack>
+              ) : (
+                <Autocomplete
+                  options={empleados}
+                  getOptionLabel={(e) => `${e.nombre_de_empleado} (${e.id_numero_empleado})`}
+                  value={empleadoSel}
+                  onChange={(_, v) => setEmpleadoSel(v)}
+                  renderInput={(params) => <TextField {...params} label="Nombre de Empleado" required />}
+                />
+              )}
+
+              <TextField
+                label="Status" select fullWidth
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+              >
+                <MenuItem value="ACTIVO">ACTIVO</MenuItem>
+                <MenuItem value="INACTIVO">INACTIVO</MenuItem>
+              </TextField>
+
+              {movimiento ? (
+                <>
+                  <Stack spacing={0.5}>
+                    <Typography variant="caption" color="text.secondary">Producto</Typography>
+                    <Typography>{movimiento.descripcion}</Typography>
                   </Stack>
                   <Stack direction="row" spacing={2}>
                     <TextField
                       label="Número económico" fullWidth
-                      value={item.numero_economico}
-                      onChange={(e) => actualizarItem(i, { numero_economico: e.target.value })}
+                      value={form.numero_economico}
+                      onChange={(e) => setForm({ ...form, numero_economico: e.target.value })}
                     />
                     <TextField
                       label="Cantidad" required type="number" fullWidth
-                      value={item.cantidad}
-                      onChange={(e) => actualizarItem(i, { cantidad: e.target.value })}
+                      value={form.cantidad}
+                      onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
                     />
                   </Stack>
+                </>
+              ) : (
+                <Stack spacing={1.5}>
+                  {items.map((item, i) => (
+                    <Stack key={i} spacing={1.5} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                      <Stack direction="row" spacing={1} alignItems="flex-start">
+                        <Autocomplete
+                          fullWidth
+                          options={productos}
+                          getOptionLabel={(p) => `${p.descripcion} (${p.codigo_sai_sku})`}
+                          value={item.producto}
+                          onChange={(_, v) => actualizarItem(i, { producto: v })}
+                          renderInput={(params) => (
+                            <TextField {...params} label={items.length > 1 ? `Producto ${i + 1}` : 'Producto'} required />
+                          )}
+                        />
+                        {items.length > 1 && (
+                          <IconButton size="small" onClick={() => quitarItem(i)} sx={{ mt: 1 }}>
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Stack>
+                      <Stack direction="row" spacing={2}>
+                        <TextField
+                          label="Número económico" fullWidth
+                          value={item.numero_economico}
+                          onChange={(e) => actualizarItem(i, { numero_economico: e.target.value })}
+                        />
+                        <TextField
+                          label="Cantidad" required type="number" fullWidth
+                          value={item.cantidad}
+                          onChange={(e) => actualizarItem(i, { cantidad: e.target.value })}
+                        />
+                      </Stack>
+                    </Stack>
+                  ))}
+                  {form.tipo_movimiento === 'SALIDA' && items.length < MAX_HERRAMIENTAS && items[items.length - 1].producto && (
+                    <Button startIcon={<AddIcon />} onClick={agregarItem} sx={{ alignSelf: 'flex-start' }}>
+                      Agregar otra herramienta
+                    </Button>
+                  )}
                 </Stack>
-              ))}
-              {form.tipo_movimiento === 'SALIDA' && items.length < MAX_HERRAMIENTAS && items[items.length - 1].producto && (
-                <Button startIcon={<AddIcon />} onClick={agregarItem} sx={{ alignSelf: 'flex-start' }}>
-                  Agregar otra herramienta
-                </Button>
               )}
-            </Stack>
-          )}
 
-          {items.length === 1 && (
-            <>
-              <CampoFoto
-                label="Foto Producto"
-                thumb={
-                  fotoProducto
-                    ? URL.createObjectURL(fotoProducto)
-                    : movimiento?.foto_producto_snapshot || items[0].producto?.foto_producto
-                }
-                onChange={setFotoProducto}
-              />
-              <CampoFoto
-                label="Foto # Numero Serie"
-                thumb={fotoNumeroSerie ? URL.createObjectURL(fotoNumeroSerie) : movimiento?.foto_numero_serie}
-                onChange={setFotoNumeroSerie}
+              {items.length === 1 && (
+                <>
+                  <CampoFoto
+                    label="Foto Producto"
+                    thumb={
+                      fotoProducto
+                        ? URL.createObjectURL(fotoProducto)
+                        : movimiento?.foto_producto_snapshot || items[0].producto?.foto_producto
+                    }
+                    onChange={setFotoProducto}
+                  />
+                  <CampoFoto
+                    label="Foto # Numero Serie"
+                    thumb={fotoNumeroSerie ? URL.createObjectURL(fotoNumeroSerie) : movimiento?.foto_numero_serie}
+                    onChange={setFotoNumeroSerie}
+                  />
+                </>
+              )}
+
+              <SignaturePad onChange={setFirma} required={!movimiento} />
+
+              <TextField
+                label="Observaciones" fullWidth multiline minRows={2}
+                value={form.observaciones}
+                onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
               />
             </>
           )}
-
-          <SignaturePad onChange={setFirma} required={!movimiento} />
-
-          <TextField
-            label="Observaciones" fullWidth multiline minRows={2}
-            value={form.observaciones}
-            onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
-          />
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
         <Button
           variant="contained" disableElevation onClick={guardar}
-          disabled={guardando || (!movimiento && (!empleadoSel || itemsIncompletos || faltaFirma))}
+          disabled={
+            guardando
+            || (esEdicionSalida
+              ? !nombreEntrega
+              : !movimiento && (!empleadoSel || itemsIncompletos || faltaFirma))
+          }
         >
           Guardar
         </Button>

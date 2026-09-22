@@ -23,6 +23,6 @@ export function columnasMovimientoCompletas() {
     { field: 'foto_numero_serie', headerName: 'Foto # Numero Serie', renderCell: (m) => <Thumbnail src={m.foto_numero_serie} size={32} /> },
     { field: 'firma_recibido_conformidad', headerName: 'Firma de Recibido y Conformidad', renderCell: (m) => <Thumbnail src={m.firma_recibido_conformidad} size={32} bg="#FFFFFF" /> },
     { field: 'observaciones', headerName: 'Observaciones' },
-    { field: 'costo_unitario', headerName: 'Costo Unitario', renderCell: (m) => formatoMoneda(m.costo_unitario) },
+    { field: 'costo_unitario', headerName: 'Costo Unitario', renderCell: (m) => formatoMoneda(m.costo_unitario) }, 
   ]
-}            
+}      

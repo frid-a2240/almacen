@@ -11,9 +11,10 @@ from app.schemas.producto import ProductoOut, ProductoCreate, ProductoUpdate
 from app.schemas.movimiento_resguardo import MovimientoOut
 from app.services.uploads import guardar_archivo
 from app.services.stock import stock_subquery, stock_de
-from app.services.resguardo import tenedores_actuales_de
+from app.services.resguardo import tenedores_actuales_de, saldos_por_empleado
 from app.services.asignados_excel import generar_asignados_excel
-from app.deps_auth import usuario_actual
+from app.services.historico_excel import generar_historico_producto_excel
+from app.deps_auth import usuario_actual, bloquear_solo_consulta
 
 router = APIRouter(prefix="/productos", tags=["Productos"], dependencies=[Depends(usuario_actual)])
 
@@ -54,7 +55,7 @@ def obtener(codigo_sai_sku: str, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=ProductoOut, status_code=201)
-def crear(datos: ProductoCreate, db: Session = Depends(get_db)):
+def crear(datos: ProductoCreate, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     if db.get(Producto, datos.codigo_sai_sku):
         raise HTTPException(409, "Ya existe un producto con ese código SAI/SKU")
     prod = Producto(**datos.model_dump())
@@ -65,7 +66,7 @@ def crear(datos: ProductoCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{codigo_sai_sku}", response_model=ProductoOut)
-def actualizar(codigo_sai_sku: str, datos: ProductoUpdate, db: Session = Depends(get_db)):
+def actualizar(codigo_sai_sku: str, datos: ProductoUpdate, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     prod = db.get(Producto, codigo_sai_sku)
     if not prod:
         raise HTTPException(404, "Producto no encontrado")
@@ -77,7 +78,7 @@ def actualizar(codigo_sai_sku: str, datos: ProductoUpdate, db: Session = Depends
 
 
 @router.delete("/{codigo_sai_sku}", status_code=204)
-def eliminar(codigo_sai_sku: str, db: Session = Depends(get_db)):
+def eliminar(codigo_sai_sku: str, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     prod = db.get(Producto, codigo_sai_sku)
     if not prod:
         raise HTTPException(404, "Producto no encontrado")
@@ -113,8 +114,49 @@ def asignados_excel(codigo_sai_sku: str, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/{codigo_sai_sku}/historico-excel")
+def historico_excel(codigo_sai_sku: str, db: Session = Depends(get_db)):
+    """Registro histórico completo (Excel) de esta herramienta: todos los
+    empleados que alguna vez la tuvieron, actuales y ya devueltos/traspasados
+    — a diferencia de asignados-excel, que solo trae quién la tiene ahorita.
+    Incluye fecha de alta y antigüedad."""
+    prod = db.get(Producto, codigo_sai_sku)
+    if not prod:
+        raise HTTPException(404, "Producto no encontrado")
+
+    movimientos = (
+        db.query(MovimientoResguardo)
+        .options(joinedload(MovimientoResguardo.empleado_ref))
+        .filter(MovimientoResguardo.producto_sku == codigo_sai_sku)
+        .order_by(MovimientoResguardo.fecha_movimiento.desc(), MovimientoResguardo.row_id.desc())
+        .all()
+    )
+    saldos = saldos_por_empleado(db, codigo_sai_sku)
+    filas = [
+        {
+            "fecha": mov.fecha_movimiento,
+            "tipo_movimiento": mov.tipo_movimiento,
+            "numero_de_vale": mov.numero_de_vale,
+            "nombre_de_empleado": mov.nombre_de_empleado,
+            "empleado_id": mov.id_numero_empleado,
+            "cantidad": mov.cantidad,
+            "observaciones": mov.observaciones,
+            "activo": saldos.get(mov.empleado_id, 0) > 0,
+        }
+        for mov in movimientos
+    ]
+    contenido = generar_historico_producto_excel(prod.descripcion, codigo_sai_sku, prod.fecha_de_alta, filas)
+
+    nombre_archivo = f"historico_{codigo_sai_sku}.xlsx"
+    return StreamingResponse(
+        BytesIO(contenido),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
+    )
+
+
 @router.post("/{codigo_sai_sku}/foto", response_model=ProductoOut)
-def subir_foto(codigo_sai_sku: str, archivo: UploadFile = File(...), db: Session = Depends(get_db)):
+def subir_foto(codigo_sai_sku: str, archivo: UploadFile = File(...), db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     prod = db.get(Producto, codigo_sai_sku)
     if not prod:
         raise HTTPException(404, "Producto no encontrado")
@@ -125,7 +167,7 @@ def subir_foto(codigo_sai_sku: str, archivo: UploadFile = File(...), db: Session
 
 
 @router.post("/{codigo_sai_sku}/scan", response_model=ProductoOut)
-def subir_scan(codigo_sai_sku: str, archivo: UploadFile = File(...), db: Session = Depends(get_db)):
+def subir_scan(codigo_sai_sku: str, archivo: UploadFile = File(...), db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     prod = db.get(Producto, codigo_sai_sku)
     if not prod:
         raise HTTPException(404, "Producto no encontrado")

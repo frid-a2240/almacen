@@ -4,6 +4,8 @@ from app.models.empleado import Empleado
 from app.models.producto import Producto
 from app.models.movimiento_resguardo import MovimientoResguardo
 from app.models.usuario import Usuario
+from app.models.baja_herramienta import BajaHerramienta, BajaHerramientaItem, BajaHerramientaFoto
+from app.models.incidencia_herramienta import IncidenciaHerramienta, IncidenciaHerramientaItem
 
 __all__ = [
     "Departamento",
@@ -12,4 +14,9 @@ __all__ = [
     "Producto",
     "MovimientoResguardo",
     "Usuario",
+    "BajaHerramienta",
+    "BajaHerramientaItem",
+    "BajaHerramientaFoto",
+    "IncidenciaHerramienta",
+    "IncidenciaHerramientaItem",
 ]

@@ -8,7 +8,7 @@ from app.schemas.clase_familia import ClaseFamiliaOut, ClaseFamiliaCreate, Clase
 from app.schemas.producto import ProductoOut
 from app.schemas.movimiento_resguardo import MovimientoOut
 from app.services.stock import stock_subquery
-from app.deps_auth import usuario_actual
+from app.deps_auth import usuario_actual, bloquear_solo_consulta
 
 router = APIRouter(prefix="/clases-familia", tags=["Clases y Familias"], dependencies=[Depends(usuario_actual)])
 
@@ -41,7 +41,7 @@ def obtener(clase_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=ClaseFamiliaOut, status_code=201)
-def crear(datos: ClaseFamiliaCreate, db: Session = Depends(get_db)):
+def crear(datos: ClaseFamiliaCreate, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     cf = ClaseFamilia(**datos.model_dump())
     db.add(cf)
     db.commit()
@@ -50,7 +50,7 @@ def crear(datos: ClaseFamiliaCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{clase_id}", response_model=ClaseFamiliaOut)
-def actualizar(clase_id: int, datos: ClaseFamiliaUpdate, db: Session = Depends(get_db)):
+def actualizar(clase_id: int, datos: ClaseFamiliaUpdate, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     cf = db.get(ClaseFamilia, clase_id)
     if not cf:
         raise HTTPException(404, "Clase / Familia no encontrada")
@@ -88,7 +88,7 @@ def movimientos_de_clase(clase_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{clase_id}", status_code=204)
-def eliminar(clase_id: int, db: Session = Depends(get_db)):
+def eliminar(clase_id: int, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     cf = db.get(ClaseFamilia, clase_id)
     if not cf:
         raise HTTPException(404, "Clase / Familia no encontrada")

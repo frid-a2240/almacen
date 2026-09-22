@@ -17,8 +17,10 @@ import {
   productosDeClase, movimientosDeClase,
 } from '../api/clasesFamilia.js'
 import { useSearch } from '../context/SearchContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { coincideBusqueda } from '../utils/search.js'
 import { cumpleFiltros, contarFiltrosActivos } from '../utils/filters.js'
+import useEsMovil from '../hooks/useEsMovil.js'
 
 const VACIO = { clase_familia: '', id_clase_fam: '' }
 const CAMPOS_BUSQUEDA = ['clase_familia', 'id_clase_fam']
@@ -30,6 +32,9 @@ const CAMPOS_FILTRO = [
 export default function ClaseFamiliaPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { query } = useSearch()
+  const { usuario } = useAuth()
+  const esMovil = useEsMovil()
+  const puedeEscribir = !usuario?.solo_consulta
   const [clases, setClases] = useState([])
   const [cargando, setCargando] = useState(true)
   const [dialogoAbierto, setDialogoAbierto] = useState(false)
@@ -120,7 +125,7 @@ export default function ClaseFamiliaPage() {
     { field: 'clase_familia', headerName: 'CLASE / FAMILIA', width: 280 },
     { field: 'id_clase_fam', headerName: 'ID CLASE FAM', width: 140 },
     { field: 'num_productos', headerName: 'PRODUCTOS', width: 120 },
-    {
+    ...(puedeEscribir ? [{
       field: 'acciones', headerName: '', width: 100, sortable: false, filterable: false,
       renderCell: (p) => (
         <Box onClick={(e) => e.stopPropagation()}>
@@ -128,7 +133,7 @@ export default function ClaseFamiliaPage() {
           <IconButton size="small" onClick={() => abrirEditar(p.row)}><EditOutlinedIcon fontSize="small" /></IconButton>
         </Box>
       ),
-    },
+    }] : []),
   ]
 
   return (
@@ -138,14 +143,22 @@ export default function ClaseFamiliaPage() {
       ) : (
         <ViewHeader
           title="CLASE FAMILIA"
-          onAdd={abrirNuevo}
+          onAdd={puedeEscribir ? abrirNuevo : undefined}
           onFiltrar={() => setFiltroAbierto(true)}
           filtrosActivos={contarFiltrosActivos(CAMPOS_FILTRO, filtros)}
-          onSeleccionar={() => setModoSeleccion(true)}
+          onSeleccionar={puedeEscribir ? () => setModoSeleccion(true) : undefined}
         />
       )}
       <Box sx={{ flexGrow: 1, display: 'flex', minHeight: 0 }}>
-        <Box sx={{ width: seleccionado ? '55%' : '100%', minWidth: 0, borderRight: seleccionado ? '1px solid' : 'none', borderColor: 'divider' }}>
+        <Box
+          sx={{
+            width: seleccionado ? (esMovil ? 0 : '55%') : '100%',
+            display: seleccionado && esMovil ? 'none' : 'block',
+            minWidth: 0,
+            borderRight: seleccionado ? '1px solid' : 'none',
+            borderColor: 'divider',
+          }}
+        >
           {cargando ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress size={28} /></Box>
           ) : (
@@ -166,8 +179,8 @@ export default function ClaseFamiliaPage() {
               clase={seleccionado}
               productos={productosRel}
               movimientos={movimientosRel}
-              onEdit={() => abrirEditar(seleccionado)}
-              onDelete={() => setAEliminar(seleccionado)}
+              onEdit={puedeEscribir ? () => abrirEditar(seleccionado) : undefined}
+              onDelete={puedeEscribir ? () => setAEliminar(seleccionado) : undefined}
               onClose={() => setSearchParams({})}
             />
           </Box>
