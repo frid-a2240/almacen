@@ -42,4 +42,10 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- La requiere @capacitor/camera para "saveToGallery" (guardar la foto
+    tomada en la galería del dispositivo) en Android 9 y anteriores — sin
+    este permiso declarado, el plugin no puede guardarla ahí y la foto se
+    queda solo dentro de la app, sin poder reutilizarla después desde la
+    galería. En Android 10+ ya no hace falta (almacenamiento con alcance). -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
 </manifest>

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Numeric, Date, Text, ForeignKey, Index
+from sqlalchemy import Column, String, Numeric, Date, DateTime, Text, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -8,6 +8,12 @@ class MovimientoResguardo(Base):
 
     row_id = Column(String(20), primary_key=True)
     fecha_movimiento = Column(Date, nullable=False)
+    # Hora de inicio: momento exacto (automático, no editable) en que se
+    # generó este renglón del vale — sirve de timestamp de captura.
+    creado_en = Column(DateTime, nullable=True)
+    # Hora de fin: hora real en que la herramienta salió/se entregó, capturada
+    # a mano (puede ser distinta de cuándo se generó el vale en el sistema).
+    hora_entrega = Column(String(5), nullable=True)
     numero_de_vale = Column(String(30), nullable=True)
     foto_vale_de_salida = Column(String(500), nullable=True)
     tipo_movimiento = Column(String(10), nullable=False)  # 'SALIDA' | 'ENTRADA'

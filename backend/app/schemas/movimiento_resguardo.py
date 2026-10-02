@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
@@ -13,6 +13,7 @@ class MovimientoCreate(BaseModel):
     cantidad: Decimal
     status: str = "ACTIVO"
     numero_economico: Optional[str] = None
+    hora_entrega: Optional[str] = None
     observaciones: Optional[str] = None
 
 
@@ -27,6 +28,7 @@ class SalidaMultipleCreate(BaseModel):
     fecha_movimiento: date
     id_numero_empleado: str
     status: str = "ACTIVO"
+    hora_entrega: Optional[str] = None
     observaciones: Optional[str] = None
     items: list[ItemVale]
 
@@ -38,10 +40,12 @@ class MovimientoUpdate(BaseModel):
     cantidad: Optional[Decimal] = None
     status: Optional[str] = None
     observaciones: Optional[str] = None
-    # Único campo editable cuando el movimiento es un vale de SALIDA (ver
-    # PUT /movimientos/{row_id}): al cambiarlo se regenera el PDF del vale
-    # (mismo folio) con el nombre actualizado.
+    # Campos editables cuando el movimiento es un vale de SALIDA (ver PUT
+    # /movimientos/{row_id}): al cambiar cualquiera de estos se regenera el
+    # PDF del vale (mismo folio) con el dato actualizado.
     nombre_usuario_entrega: Optional[str] = None
+    numero_economico: Optional[str] = None
+    hora_entrega: Optional[str] = None
 
 
 class TraspasoCreate(BaseModel):
@@ -61,6 +65,8 @@ class MovimientoOut(BaseModel):
 
     row_id: str
     fecha_movimiento: date
+    creado_en: Optional[datetime] = None
+    hora_entrega: Optional[str] = None
     numero_de_vale: Optional[str] = None
     foto_vale_de_salida: Optional[str] = None
     tipo_movimiento: str

@@ -5,8 +5,16 @@ import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined'
 import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined'
 import { useNavigate } from 'react-router-dom'
 import DetailPanel from './DetailPanel.jsx'
+import RelatedTable from './RelatedTable.jsx'
 import Thumbnail from './Thumbnail.jsx'
-import { formatoFecha, formatoMoneda } from '../utils/formatters.js'
+import { formatoFecha, formatoFechaHora, formatoMoneda } from '../utils/formatters.js'
+
+const COLUMNAS_HISTORIAL = [
+  { field: 'fecha', headerName: 'Fecha', renderCell: (h) => formatoFechaHora(h.fecha) },
+  { field: 'valor_anterior', headerName: 'Número económico anterior' },
+  { field: 'valor_nuevo', headerName: 'Número económico nuevo' },
+  { field: 'usuario_nombre', headerName: 'Modificado por' },
+]
 
 function ImagenCampo({ label, src, bg }) {
   if (!src) return null
@@ -24,6 +32,7 @@ function ImagenCampo({ label, src, bg }) {
 
 export default function MovimientoDetailPanel({
   movimiento: m, departamentos = [], onEdit, onDelete, onClose, movimientoRelacionado, onVerRelacionado,
+  historialNumEco = [],
 }) {
   const navigate = useNavigate()
   const depto = departamentos.find((d) => d.departamento === m.departamento)
@@ -37,6 +46,8 @@ export default function MovimientoDetailPanel({
       onClose={onClose}
       fields={[
         { label: 'Fecha Movimiento', value: formatoFecha(m.fecha_movimiento) },
+        { label: 'Hora de inicio (generado)', value: formatoFechaHora(m.creado_en) },
+        { label: 'Hora de fin (entrega real)', value: m.hora_entrega },
         { label: 'Numero de Vale', value: m.numero_de_vale },
         { label: 'Tipo Movimiento', value: m.tipo_movimiento },
         m.id_traspaso && {
@@ -92,6 +103,12 @@ export default function MovimientoDetailPanel({
       <ImagenCampo label="Foto Producto" src={m.foto_producto_snapshot} />
       <ImagenCampo label="Foto # Numero Serie" src={m.foto_numero_serie} />
       <ImagenCampo label="Firma de Recibido y Conformidad" src={m.firma_recibido_conformidad} bg="#FFFFFF" />
+      <RelatedTable
+        title="Historial de número económico"
+        rows={historialNumEco}
+        keyFn={(h) => h.id}
+        columns={COLUMNAS_HISTORIAL}
+      />
     </DetailPanel>
   )
 }

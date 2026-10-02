@@ -7,6 +7,8 @@ export const obtenerProducto = (sku) => client.get(`/productos/${sku}`).then((r)
 export const crearProducto = (datos) => client.post('/productos/', datos).then((r) => r.data)
 export const actualizarProducto = (sku, datos) => client.put(`/productos/${sku}`, datos).then((r) => r.data)
 export const eliminarProducto = (sku) => client.delete(`/productos/${sku}`)
+export const historialNumeroEconomicoProducto = (sku) =>
+  client.get(`/productos/${sku}/historial-numero-economico`).then((r) => r.data)
 export const subirFotoProducto = (sku, archivo) => {
   const form = new FormData()
   form.append('archivo', archivo)

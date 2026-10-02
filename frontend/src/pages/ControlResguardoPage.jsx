@@ -14,7 +14,7 @@ import SelectionBar from '../components/SelectionBar.jsx'
 import MovimientoDetailPanel from '../components/MovimientoDetailPanel.jsx'
 import MovimientoFormDialog from '../components/MovimientoFormDialog.jsx'
 import TraspasoDialog from '../components/TraspasoDialog.jsx'
-import { listarMovimientos, eliminarMovimiento, obtenerValePdf } from '../api/movimientos.js'
+import { listarMovimientos, eliminarMovimiento, obtenerValePdf, historialNumeroEconomicoMovimiento } from '../api/movimientos.js'
 import { listarEmpleados } from '../api/empleados.js'
 import { listarProductos } from '../api/productos.js'
 import { listarDepartamentos } from '../api/departamentos.js'
@@ -73,6 +73,7 @@ export default function ControlResguardoPage() {
   const [marcados, setMarcados] = useState(new Set())
   const [confirmarBorrado, setConfirmarBorrado] = useState(false)
   const [traspasando, setTraspasando] = useState(null)
+  const [historialNumEco, setHistorialNumEco] = useState([])
 
   // Saldo actual por empleado+producto (SALIDA - ENTRADA), calculado del
   // mismo listado que ya se tiene en pantalla — para decidir, por rengón,
@@ -123,6 +124,12 @@ export default function ControlResguardoPage() {
   useEffect(cargar, [])
 
   const seleccionado = movimientos.find((m) => m.row_id === searchParams.get('sel')) || null
+
+  useEffect(() => {
+    if (!seleccionado) { setHistorialNumEco([]); return }
+    historialNumeroEconomicoMovimiento(seleccionado.row_id).then(setHistorialNumEco)
+  }, [seleccionado?.row_id])
+
   const movimientosFiltrados = movimientos.filter(
     (m) => coincideBusqueda(m, CAMPOS_BUSQUEDA, query) && cumpleFiltros(m, CAMPOS_FILTRO, filtros),
   )
@@ -274,6 +281,7 @@ export default function ControlResguardoPage() {
             <MovimientoDetailPanel
               movimiento={seleccionado}
               departamentos={departamentos}
+              historialNumEco={historialNumEco}
               onEdit={puedeEscribir ? () => abrirEditar(seleccionado) : undefined}
               onDelete={puedeEscribir ? () => setAEliminar(seleccionado) : undefined}
               onClose={cerrarDetalle}

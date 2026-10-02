@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from io import BytesIO
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -10,10 +11,12 @@ from app.models import MovimientoResguardo, Empleado, Producto, Usuario
 from app.schemas.movimiento_resguardo import (
     MovimientoOut, MovimientoCreate, MovimientoUpdate, SalidaMultipleCreate, TraspasoCreate,
 )
+from app.schemas.historial_numero_economico import HistorialNumeroEconomicoOut
 from app.services.uploads import guardar_archivo, guardar_bytes
 from app.services.folio import siguiente_folio
 from app.services.vale_pdf import generar_vale_pdf
 from app.services.resguardo import saldo_actual
+from app.services.historial_numero_economico import registrar_cambio, historial_de
 from app.deps_auth import usuario_actual, bloquear_solo_consulta
 
 router = APIRouter(prefix="/movimientos", tags=["Control de Resguardo"], dependencies=[Depends(usuario_actual)])
@@ -70,7 +73,8 @@ def _fila_movimiento(
     db: Session, *, empleado: Empleado, producto: Producto, usuario: Usuario,
     fecha_movimiento, numero_de_vale, tipo_movimiento: str, status: str,
     cantidad, numero_economico: str | None, observaciones: str | None,
-    id_traspaso: str | None = None,
+    id_traspaso: str | None = None, hora_entrega: str | None = None,
+    creado_en: datetime | None = None,
 ) -> MovimientoResguardo:
     """Arma UN renglón (una herramienta) del movimiento — reusado tanto por el
     alta de un solo producto (ENTRADA, o edición) como por el vale con varias
@@ -79,6 +83,8 @@ def _fila_movimiento(
     return MovimientoResguardo(
         row_id=_nuevo_row_id(db),
         fecha_movimiento=fecha_movimiento,
+        creado_en=creado_en or datetime.now(),
+        hora_entrega=hora_entrega,
         numero_de_vale=numero_de_vale,
         tipo_movimiento=tipo_movimiento,
         id_traspaso=id_traspaso,
@@ -130,6 +136,8 @@ def _datos_vale(db: Session, mov: MovimientoResguardo) -> dict:
 
     return {
         "fecha_movimiento": mov.fecha_movimiento,
+        "creado_en": mov.creado_en,
+        "hora_entrega": mov.hora_entrega,
         "numero_de_vale": mov.numero_de_vale,
         "id_numero_empleado": mov.id_numero_empleado,
         "nombre_de_empleado": mov.nombre_de_empleado,
@@ -191,7 +199,7 @@ def crear(
         fecha_movimiento=datos.fecha_movimiento, numero_de_vale=numero_de_vale,
         tipo_movimiento=datos.tipo_movimiento, status=datos.status,
         cantidad=datos.cantidad, numero_economico=datos.numero_economico,
-        observaciones=datos.observaciones,
+        observaciones=datos.observaciones, hora_entrega=datos.hora_entrega,
     )
     db.add(mov)
     db.commit()
@@ -227,13 +235,15 @@ def crear_salida_multiple(
             productos[item.codigo_sai_sku] = producto
 
     numero_de_vale = siguiente_folio(db)
+    ahora = datetime.now()
     filas = [
         _fila_movimiento(
             db, empleado=empleado, producto=productos[item.codigo_sai_sku], usuario=usuario,
             fecha_movimiento=datos.fecha_movimiento, numero_de_vale=numero_de_vale,
             tipo_movimiento="SALIDA", status=datos.status,
             cantidad=item.cantidad, numero_economico=item.numero_economico,
-            observaciones=datos.observaciones,
+            observaciones=datos.observaciones, hora_entrega=datos.hora_entrega,
+            creado_en=ahora,
         )
         for item in datos.items
     ]
@@ -330,29 +340,44 @@ def vale_pdf(row_id: str, db: Session = Depends(get_db), _=Depends(bloquear_solo
 
 
 @router.put("/{row_id}", response_model=MovimientoOut)
-def actualizar(row_id: str, datos: MovimientoUpdate, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
+def actualizar(
+    row_id: str, datos: MovimientoUpdate, db: Session = Depends(get_db),
+    usuario: Usuario = Depends(usuario_actual), _=Depends(bloquear_solo_consulta),
+):
     mov = db.get(MovimientoResguardo, row_id)
     if not mov:
         raise HTTPException(404, "Movimiento no encontrado")
 
     cambios = datos.model_dump(exclude_unset=True)
-    # En un vale de SALIDA, editar solo debe poder corregir el nombre de quien
-    # entrega (que se reimprime en el vale) y su firma (subida aparte, ver
-    # POST .../firma) — el resto del vale (folio, herramienta, empleado que
-    # recibe) no se toca desde aquí; para mover la herramienta a otra persona
-    # está el traspaso.
+    # En un vale de SALIDA, editar solo debe poder corregir lo que se
+    # reimprime en el vale (nombre de quien entrega, número económico, hora
+    # de entrega) y su firma (subida aparte, ver POST .../firma) — el resto
+    # del vale (folio, herramienta, empleado que recibe) no se toca desde
+    # aquí; para mover la herramienta a otra persona está el traspaso.
     if mov.tipo_movimiento == "SALIDA":
-        cambios = {k: v for k, v in cambios.items() if k == "nombre_usuario_entrega"}
+        cambios = {k: v for k, v in cambios.items() if k in ("nombre_usuario_entrega", "numero_economico", "hora_entrega")}
+
+    if "numero_economico" in cambios and cambios["numero_economico"] != mov.numero_economico:
+        registrar_cambio(
+            db, entidad_tipo="movimiento", entidad_id=mov.row_id,
+            anterior=mov.numero_economico, nuevo=cambios["numero_economico"],
+            usuario_nombre=usuario.nombre,
+        )
 
     for campo, valor in cambios.items():
         setattr(mov, campo, valor)
     db.commit()
     db.refresh(mov)
 
-    if mov.tipo_movimiento == "SALIDA" and "nombre_usuario_entrega" in cambios:
+    if mov.tipo_movimiento == "SALIDA" and cambios.keys() & {"nombre_usuario_entrega", "numero_economico", "hora_entrega"}:
         _guardar_vale_generado(db, [mov])
         db.refresh(mov)
     return mov
+
+
+@router.get("/{row_id}/historial-numero-economico", response_model=list[HistorialNumeroEconomicoOut])
+def historial_numero_economico(row_id: str, db: Session = Depends(get_db)):
+    return historial_de(db, entidad_tipo="movimiento", entidad_id=row_id)
 
 
 @router.delete("/{row_id}", status_code=204)

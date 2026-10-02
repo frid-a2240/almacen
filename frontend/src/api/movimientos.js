@@ -10,6 +10,8 @@ export const crearSalidaMultiple = (datos) => client.post('/movimientos/salida-m
 export const traspasarHerramienta = (datos) => client.post('/movimientos/traspaso', datos).then((r) => r.data)
 export const actualizarMovimiento = (rowId, datos) => client.put(`/movimientos/${rowId}`, datos).then((r) => r.data)
 export const eliminarMovimiento = (rowId) => client.delete(`/movimientos/${rowId}`)
+export const historialNumeroEconomicoMovimiento = (rowId) =>
+  client.get(`/movimientos/${rowId}/historial-numero-economico`).then((r) => r.data)
 
 const subirArchivo = (rowId, endpoint, archivo) => {
   const form = new FormData()

@@ -6,14 +6,16 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import Producto, MovimientoResguardo, ClaseFamilia
+from app.models import Producto, MovimientoResguardo, ClaseFamilia, Usuario
 from app.schemas.producto import ProductoOut, ProductoCreate, ProductoUpdate
 from app.schemas.movimiento_resguardo import MovimientoOut
+from app.schemas.historial_numero_economico import HistorialNumeroEconomicoOut
 from app.services.uploads import guardar_archivo
 from app.services.stock import stock_subquery, stock_de
 from app.services.resguardo import tenedores_actuales_de, saldos_por_empleado
 from app.services.asignados_excel import generar_asignados_excel
 from app.services.historico_excel import generar_historico_producto_excel
+from app.services.historial_numero_economico import registrar_cambio, historial_de
 from app.deps_auth import usuario_actual, bloquear_solo_consulta
 
 router = APIRouter(prefix="/productos", tags=["Productos"], dependencies=[Depends(usuario_actual)])
@@ -66,15 +68,30 @@ def crear(datos: ProductoCreate, db: Session = Depends(get_db), _=Depends(bloque
 
 
 @router.put("/{codigo_sai_sku}", response_model=ProductoOut)
-def actualizar(codigo_sai_sku: str, datos: ProductoUpdate, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
+def actualizar(
+    codigo_sai_sku: str, datos: ProductoUpdate, db: Session = Depends(get_db),
+    usuario: Usuario = Depends(usuario_actual), _=Depends(bloquear_solo_consulta),
+):
     prod = db.get(Producto, codigo_sai_sku)
     if not prod:
         raise HTTPException(404, "Producto no encontrado")
-    for campo, valor in datos.model_dump(exclude_unset=True).items():
+    cambios = datos.model_dump(exclude_unset=True)
+    if "numero_economico" in cambios and cambios["numero_economico"] != prod.numero_economico:
+        registrar_cambio(
+            db, entidad_tipo="producto", entidad_id=codigo_sai_sku,
+            anterior=prod.numero_economico, nuevo=cambios["numero_economico"],
+            usuario_nombre=usuario.nombre,
+        )
+    for campo, valor in cambios.items():
         setattr(prod, campo, valor)
     db.commit()
     db.refresh(prod)
     return _to_out(prod, stock_de(db, codigo_sai_sku))
+
+
+@router.get("/{codigo_sai_sku}/historial-numero-economico", response_model=list[HistorialNumeroEconomicoOut])
+def historial_numero_economico(codigo_sai_sku: str, db: Session = Depends(get_db)):
+    return historial_de(db, entidad_tipo="producto", entidad_id=codigo_sai_sku)
 
 
 @router.delete("/{codigo_sai_sku}", status_code=204)

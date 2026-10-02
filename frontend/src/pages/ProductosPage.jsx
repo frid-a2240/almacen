@@ -11,7 +11,7 @@ import FilterPanel from '../components/FilterPanel.jsx'
 import SelectionBar from '../components/SelectionBar.jsx'
 import ProductoDetailPanel from '../components/ProductoDetailPanel.jsx'
 import ProductoFormDialog from '../components/ProductoFormDialog.jsx'
-import { listarProductos, eliminarProducto, movimientosDeProducto } from '../api/productos.js'
+import { listarProductos, eliminarProducto, movimientosDeProducto, historialNumeroEconomicoProducto } from '../api/productos.js'
 import { listarClasesFamilia } from '../api/clasesFamilia.js'
 import { useSearch } from '../context/SearchContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -53,6 +53,7 @@ export default function ProductosPage() {
   const [editando, setEditando] = useState(null)
   const [aEliminar, setAEliminar] = useState(null)
   const [movimientos, setMovimientos] = useState([])
+  const [historialNumEco, setHistorialNumEco] = useState([])
   const [filtroAbierto, setFiltroAbierto] = useState(false)
   const [filtros, setFiltros] = useState({})
   const [modoSeleccion, setModoSeleccion] = useState(false)
@@ -77,8 +78,9 @@ export default function ProductosPage() {
   )
 
   useEffect(() => {
-    if (!seleccionado) { setMovimientos([]); return }
+    if (!seleccionado) { setMovimientos([]); setHistorialNumEco([]); return }
     movimientosDeProducto(seleccionado.codigo_sai_sku).then(setMovimientos)
+    historialNumeroEconomicoProducto(seleccionado.codigo_sai_sku).then(setHistorialNumEco)
   }, [seleccionado?.codigo_sai_sku])
 
   const verDetalle = (p) => setSearchParams({ sel: p.codigo_sai_sku })
@@ -186,6 +188,7 @@ export default function ProductosPage() {
               producto={seleccionado}
               clases={clases}
               movimientos={movimientos}
+              historialNumEco={historialNumEco}
               onEdit={puedeEscribir ? () => abrirEditar(seleccionado) : undefined}
               onDelete={puedeEscribir ? () => setAEliminar(seleccionado) : undefined}
               onClose={cerrarDetalle}

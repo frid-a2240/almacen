@@ -10,10 +10,17 @@ import DetailPanel from './DetailPanel.jsx'
 import RelatedTable from './RelatedTable.jsx'
 import { imageURL } from '../api/client.js'
 import { descargarAsignadosExcel, descargarHistoricoExcel } from '../api/productos.js'
-import { formatoFecha, formatoMoneda, antiguedadDesde } from '../utils/formatters.js'
+import { formatoFecha, formatoFechaHora, formatoMoneda, antiguedadDesde } from '../utils/formatters.js'
 import { columnasMovimientoCompletas } from '../config/movimientoColumns.jsx'
 
-export default function ProductoDetailPanel({ producto, clases, movimientos, onEdit, onDelete, onClose }) {
+const COLUMNAS_HISTORIAL = [
+  { field: 'fecha', headerName: 'Fecha', renderCell: (h) => formatoFechaHora(h.fecha) },
+  { field: 'valor_anterior', headerName: 'Número económico anterior' },
+  { field: 'valor_nuevo', headerName: 'Número económico nuevo' },
+  { field: 'usuario_nombre', headerName: 'Modificado por' },
+]
+
+export default function ProductoDetailPanel({ producto, clases, movimientos, historialNumEco = [], onEdit, onDelete, onClose }) {
   const navigate = useNavigate()
   const clase = clases.find((c) => c.id === producto.clase_familia_id)
   const [descargando, setDescargando] = useState(false)
@@ -109,6 +116,12 @@ export default function ProductoDetailPanel({ producto, clases, movimientos, onE
         keyFn={(m) => m.row_id}
         onRowClick={(m) => navigate(`/control-de-resguardo?sel=${m.row_id}`)}
         columns={columnasMovimientoCompletas()}
+      />
+      <RelatedTable
+        title="Historial de número económico"
+        rows={historialNumEco}
+        keyFn={(h) => h.id}
+        columns={COLUMNAS_HISTORIAL}
       />
     </DetailPanel>
   )

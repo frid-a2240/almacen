@@ -14,10 +14,11 @@ import {
   subirFotoVale, subirFotoProductoMovimiento, subirFotoNumeroSerie, subirFirma,
 } from '../api/movimientos.js'
 import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
+import { formatoFechaHora } from '../utils/formatters.js'
 
 const VACIO = {
   fecha_movimiento: dayjs().format('YYYY-MM-DD'), numero_de_vale: '', tipo_movimiento: 'SALIDA',
-  cantidad: 1, status: 'ACTIVO', numero_economico: '', observaciones: '',
+  cantidad: 1, status: 'ACTIVO', numero_economico: '', hora_entrega: '', observaciones: '',
 }
 const ITEM_VACIO = { producto: null, cantidad: 1, numero_economico: '' }
 const MAX_HERRAMIENTAS = 6
@@ -60,6 +61,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       cantidad: movimiento.cantidad,
       status: movimiento.status || 'ACTIVO',
       numero_economico: movimiento.numero_economico || '',
+      hora_entrega: movimiento.hora_entrega || '',
       observaciones: movimiento.observaciones || '',
     } : VACIO)
   }, [open, movimiento])
@@ -86,7 +88,11 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       setAviso('')
       try {
         const rowId = movimiento.row_id
-        await actualizarMovimiento(rowId, { nombre_usuario_entrega: nombreEntrega })
+        await actualizarMovimiento(rowId, {
+          nombre_usuario_entrega: nombreEntrega,
+          numero_economico: form.numero_economico || null,
+          hora_entrega: form.hora_entrega || null,
+        })
         if (firma) await subirFirma(rowId, firma)
         onSaved(rowId)
       } finally {
@@ -116,6 +122,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
         const creado = await crearMovimiento({
           ...form,
           numero_economico: items[0].numero_economico,
+          hora_entrega: form.hora_entrega || null,
           cantidad: items[0].cantidad,
           id_numero_empleado: empleadoSel.id_numero_empleado,
           codigo_sai_sku: items[0].producto.codigo_sai_sku,
@@ -129,6 +136,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
           fecha_movimiento: form.fecha_movimiento,
           id_numero_empleado: empleadoSel.id_numero_empleado,
           status: form.status,
+          hora_entrega: form.hora_entrega || null,
           observaciones: form.observaciones,
           items: items.map((it) => ({
             codigo_sai_sku: it.producto.codigo_sai_sku,
@@ -200,6 +208,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
             <>
               <TextField label="Fecha Movimiento" value={form.fecha_movimiento} disabled fullWidth />
               <TextField label="Número de vale" value={form.numero_de_vale} disabled fullWidth />
+              <TextField label="Hora de inicio (generado)" value={formatoFechaHora(movimiento.creado_en)} disabled fullWidth />
               <Stack spacing={0.5}>
                 <Typography variant="caption" color="text.secondary">Nombre de Empleado</Typography>
                 <Typography>{movimiento.nombre_de_empleado}</Typography>
@@ -209,15 +218,26 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
                 <Typography>{movimiento.descripcion}</Typography>
               </Stack>
               <Stack direction="row" spacing={2}>
-                <TextField label="Número económico" value={form.numero_economico} disabled fullWidth />
+                <TextField
+                  label="Número económico" fullWidth
+                  value={form.numero_economico}
+                  onChange={(e) => setForm({ ...form, numero_economico: e.target.value })}
+                  helperText="Editable — queda registrado en el historial de cambios."
+                />
                 <TextField label="Cantidad" value={form.cantidad} disabled fullWidth />
               </Stack>
+              <TextField
+                label="Hora de fin (entrega real)" type="time" fullWidth slotProps={{ inputLabel: { shrink: true } }}
+                value={form.hora_entrega}
+                onChange={(e) => setForm({ ...form, hora_entrega: e.target.value })}
+                helperText="Hora real en que la herramienta salió/se entregó, si es distinta a cuando se generó el vale."
+              />
 
               <TextField
                 label="Nombre y Firma de Entrega" required fullWidth
                 value={nombreEntrega}
                 onChange={(e) => setNombreEntrega(e.target.value)}
-                helperText="Único dato que se puede corregir aquí. Para mover esta herramienta a otro empleado usa Traspasar, no editar."
+                helperText="Para mover esta herramienta a otro empleado usa Traspasar, no editar."
               />
               <SignaturePad onChange={setFirma} />
 
@@ -236,11 +256,23 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
             </>
           ) : (
             <>
-              <TextField
-                label="Fecha Movimiento" required type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }}
-                value={form.fecha_movimiento}
-                onChange={(e) => setForm({ ...form, fecha_movimiento: e.target.value })}
-              />
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  label="Fecha Movimiento" required type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }}
+                  value={form.fecha_movimiento}
+                  onChange={(e) => setForm({ ...form, fecha_movimiento: e.target.value })}
+                />
+                {form.tipo_movimiento === 'SALIDA' && (
+                  <TextField
+                    label="Hora de fin (entrega real)" type="time" fullWidth slotProps={{ inputLabel: { shrink: true } }}
+                    value={form.hora_entrega}
+                    onChange={(e) => setForm({ ...form, hora_entrega: e.target.value })}
+                  />
+                )}
+              </Stack>
+              {movimiento && (
+                <TextField label="Hora de inicio (generado)" value={formatoFechaHora(movimiento.creado_en)} disabled fullWidth />
+              )}
               <TextField
                 label="Número de vale" fullWidth
                 value={form.numero_de_vale}

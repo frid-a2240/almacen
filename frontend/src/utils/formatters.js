@@ -10,6 +10,11 @@ export function formatoFecha(valor) {
   return dayjs(valor).format('DD/MM/YYYY')
 }
 
+export function formatoFechaHora(valor) {
+  if (!valor) return ''
+  return dayjs(valor).format('DD/MM/YYYY HH:mm')
+}
+
 export function formatoFechaLarga(valor) {
   if (!valor) return ''
   return dayjs(valor).format('D/M/YYYY')
