@@ -3,13 +3,14 @@ import {
   AppBar, Toolbar, IconButton, Typography, InputBase, Avatar, Box, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip,
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SearchIcon from '@mui/icons-material/Search'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'
 import CheckIcon from '@mui/icons-material/Check'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { VIEWS } from '../config/views.js'
 import { APPBAR_HEIGHT } from './Sidebar.jsx'
 import { useSearch } from '../context/SearchContext.jsx'
@@ -18,6 +19,7 @@ import { useThemeMode } from '../context/ThemeModeContext.jsx'
 
 export default function TopAppBar({ onToggleSidebar }) {
   const location = useLocation()
+  const navigate = useNavigate()
   const vista = VIEWS.find((v) => v.path === location.pathname)
   const nombreVista = vista ? vista.name : ''
   const { query, setQuery } = useSearch()
@@ -33,6 +35,14 @@ export default function TopAppBar({ onToggleSidebar }) {
         <IconButton edge="start" onClick={onToggleSidebar} sx={{ color: 'text.primary' }}>
           <MenuIcon />
         </IconButton>
+        {/* En el APK (WebView de Capacitor) no hay botón de regresar del
+            navegador — sin esto, navegar a un registro relacionado (p.ej.
+            desde un vale al empleado) no tenía forma de volver. */}
+        {location.pathname !== '/dashboard' && (
+          <IconButton onClick={() => navigate(-1)} sx={{ color: 'text.primary' }}>
+            <ArrowBackIcon />
+          </IconButton>
+        )}
         <Box component="img" src={`${import.meta.env.BASE_URL}logo-icon.png`} alt="ISP" sx={{ width: 30, height: 30, flexShrink: 0 }} />
         <Typography
           variant="subtitle1" fontWeight={600} noWrap
