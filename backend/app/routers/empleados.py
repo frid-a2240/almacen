@@ -1,3 +1,4 @@
+from decimal import Decimal
 from io import BytesIO
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -8,6 +9,7 @@ from app.database import get_db
 from app.models import Empleado, MovimientoResguardo
 from app.schemas.empleado import EmpleadoOut, EmpleadoCreate, EmpleadoUpdate
 from app.schemas.movimiento_resguardo import MovimientoOut
+from app.schemas.no_adeudo import NoAdeudoGenerar
 from app.services.uploads import guardar_archivo
 from app.services.resguardo import resguardo_actual_de, saldos_por_sku, historial_herramientas_de
 from app.services.inventario_excel import generar_inventario_xlsm
@@ -204,27 +206,44 @@ def resguardo_pdf(id_numero_empleado: str, db: Session = Depends(get_db), _=Depe
     )
 
 
-@router.get("/{id_numero_empleado}/no-adeudo-pdf")
-def no_adeudo_pdf(id_numero_empleado: str, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
-    """Constancia de No Adeudo — solo se puede generar si el empleado ya no
-    tiene ninguna herramienta en resguardo (mismo requisito que para darlo de
-    baja). Cada vez que se genera se le asigna un folio nuevo."""
+@router.post("/{id_numero_empleado}/no-adeudo-pdf")
+def no_adeudo_pdf(
+    id_numero_empleado: str, datos: NoAdeudoGenerar, db: Session = Depends(get_db),
+    _=Depends(bloquear_solo_consulta),
+):
+    """Constancia de No Adeudo — a diferencia de antes, se emite siempre
+    (aunque el empleado todavía tenga herramienta en resguardo): si tiene
+    pendientes, la constancia se convierte en el cobro de adeudo (con el %
+    de vida útil que capturó el pañol por cada herramienta, ver
+    no_adeudo_pdf.py); si ya no tiene nada, certifica que no debe nada (como
+    antes). Cada vez que se genera se le asigna un folio nuevo."""
     emp = db.get(Empleado, id_numero_empleado)
     if not emp:
         raise HTTPException(404, "Empleado no encontrado")
 
     pendientes = resguardo_actual_de(db, id_numero_empleado)
-    if pendientes:
-        raise HTTPException(
-            422,
-            f"No se puede emitir la constancia: {emp.nombre_de_empleado} todavía tiene "
-            f"{len(pendientes)} herramienta(s) en resguardo.",
-        )
-
     folio = siguiente_folio_no_adeudo(db)
-    herramientas = historial_herramientas_de(db, id_numero_empleado)
+
+    if pendientes:
+        pct_por_row = {item.row_id: item.vida_util_pct for item in datos.items}
+        herramientas = []
+        for p in pendientes:
+            pct = pct_por_row.get(p["row_id"], Decimal(0))
+            costo_total = (p["costo_unitario"] or Decimal(0)) * p["cantidad"]
+            # % de vida útil = cuánta vida le queda a la herramienta (100% =
+            # nueva, 0% = ya agotada) — se le cobra ESE porcentaje del costo:
+            # casi nueva y perdida -> se cobra casi completo; ya muy usada ->
+            # se cobra poco. No al revés.
+            costo_a_cobrar = costo_total * (pct / Decimal(100))
+            herramientas.append({**p, "costo_total": costo_total, "vida_util_pct": pct, "costo_a_cobrar": costo_a_cobrar})
+        hay_adeudo = True
+    else:
+        herramientas = historial_herramientas_de(db, id_numero_empleado)
+        hay_adeudo = False
+
     contenido = generar_no_adeudo_pdf(
-        emp.nombre_de_empleado, emp.id_numero_empleado, emp.puesto_posicion, folio, herramientas,
+        emp.nombre_de_empleado, emp.id_numero_empleado, emp.puesto_posicion, folio,
+        herramientas, hay_adeudo=hay_adeudo, observaciones=datos.observaciones,
     )
 
     nombre_archivo = f"no_adeudo_{id_numero_empleado}.pdf"

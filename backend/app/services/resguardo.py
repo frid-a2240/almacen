@@ -41,6 +41,7 @@ def resguardo_actual_de(db: Session, empleado_id: str):
 
     filas = [
         {
+            "row_id": mov.row_id,
             "fecha": mov.fecha_movimiento,
             "numero_de_vale": mov.numero_de_vale,
             "tipo_movimiento": mov.tipo_movimiento,
@@ -48,10 +49,12 @@ def resguardo_actual_de(db: Session, empleado_id: str):
             "descripcion": mov.descripcion,
             "udm": mov.udm,
             "numero_economico": mov.numero_economico,
+            "numero_serie": mov.numero_serie,
             "clase_familia": mov.clase_familia,
             "cantidad": saldos[mov.producto_sku or mov.codigo_sai_sku],
             "observaciones": mov.observaciones,
             "costo_unitario": mov.costo_unitario,
+            "fecha_adquisicion": mov.producto_ref.fecha_de_alta if mov.producto_ref else None,
             "foto_producto": mov.producto_ref.foto_producto if mov.producto_ref else mov.foto_producto_snapshot,
         }
         for mov in ultimas_salidas
@@ -82,8 +85,10 @@ def historial_herramientas_de(db: Session, empleado_id: str):
             "descripcion": mov.descripcion,
             "cantidad": mov.cantidad,
             "numero_economico": mov.numero_economico,
+            "numero_serie": mov.numero_serie,
             "costo_unitario": mov.costo_unitario,
             "fecha": mov.fecha_movimiento,
+            "fecha_adquisicion": mov.producto_ref.fecha_de_alta if mov.producto_ref else None,
         }
         for mov in ultimas_salidas
     ]

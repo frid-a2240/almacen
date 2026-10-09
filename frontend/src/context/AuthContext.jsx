@@ -24,13 +24,14 @@ export function AuthProvider({ children }) {
       .catch(() => localStorage.removeItem(TOKEN_KEY))
       .finally(() => setCargando(false))
   }, [])
-
+ 
   const login = async (numeroControl, password) => {
     const { token, usuario: u } = await loginApi(numeroControl, password)
     localStorage.setItem(TOKEN_KEY, token)
     setUsuario(u)
   }
 
+ 
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY)
     setUsuario(null)
@@ -50,3 +51,7 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext)
 }
+
+
+
+

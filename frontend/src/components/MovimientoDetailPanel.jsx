@@ -1,4 +1,4 @@
-import { Box, Typography, IconButton } from '@mui/material'
+import { Box, Typography, IconButton, Stack } from '@mui/material'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import HowToRegOutlinedIcon from '@mui/icons-material/HowToRegOutlined'
 import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined'
@@ -47,7 +47,7 @@ export default function MovimientoDetailPanel({
       fields={[
         { label: 'Fecha Movimiento', value: formatoFecha(m.fecha_movimiento) },
         { label: 'Hora de inicio (generado)', value: formatoFechaHora(m.creado_en) },
-        { label: 'Hora de fin (entrega real)', value: m.hora_entrega },
+        { label: 'Hora de fin (generado)', value: m.hora_entrega },
         { label: 'Numero de Vale', value: m.numero_de_vale },
         { label: 'Tipo Movimiento', value: m.tipo_movimiento },
         m.id_traspaso && {
@@ -93,6 +93,7 @@ export default function MovimientoDetailPanel({
         },
         { label: 'UDM', value: m.udm },
         { label: 'Numero Economico', value: m.numero_economico },
+        { label: 'Numero de Serie', value: m.numero_serie },
         { label: 'Clase / Familia', value: m.clase_familia },
         { label: 'Costo Unitario', value: formatoMoneda(m.costo_unitario) },
         { label: 'Cantidad', value: m.cantidad },
@@ -103,6 +104,18 @@ export default function MovimientoDetailPanel({
       <ImagenCampo label="Foto Producto" src={m.foto_producto_snapshot} />
       <ImagenCampo label="Foto # Numero Serie" src={m.foto_numero_serie} />
       <ImagenCampo label="Firma de Recibido y Conformidad" src={m.firma_recibido_conformidad} bg="#FFFFFF" />
+      {!!m.fotos?.length && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Fotos de la herramienta
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ mt: 0.5, gap: 1, flexWrap: 'wrap' }}>
+            {m.fotos.map((f) => (
+              <Thumbnail key={f.id} src={f.foto} shape="rounded" size={80} />
+            ))}
+          </Stack>
+        </Box>
+      )}
       <RelatedTable
         title="Historial de número económico"
         rows={historialNumEco}

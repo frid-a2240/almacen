@@ -7,41 +7,56 @@ import AddIcon from '@mui/icons-material/Add'
 import CloseIcon from '@mui/icons-material/Close'
 import dayjs from 'dayjs'
 import CampoFoto from './CampoFoto.jsx'
+import FotosMultiples from './FotosMultiples.jsx'
+import GaleriaFotosExistentes from './GaleriaFotosExistentes.jsx'
 import SignaturePad from './SignaturePad.jsx'
 import Thumbnail from './Thumbnail.jsx'
 import {
   crearMovimiento, crearSalidaMultiple, actualizarMovimiento, obtenerValePdf,
   subirFotoVale, subirFotoProductoMovimiento, subirFotoNumeroSerie, subirFirma,
+  agregarFotoMovimiento, quitarFotoMovimiento,
 } from '../api/movimientos.js'
 import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
 import { formatoFechaHora } from '../utils/formatters.js'
 
+// fecha_movimiento de aquí solo sirve de relleno inicial del módulo — se
+// recalcula al abrir el diálogo (ver useEffect) porque, si la pestaña se
+// queda abierta de un día para otro, esta constante (evaluada una sola vez
+// al cargar la página) se queda con la fecha de ayer.
 const VACIO = {
   fecha_movimiento: dayjs().format('YYYY-MM-DD'), numero_de_vale: '', tipo_movimiento: 'SALIDA',
-  cantidad: 1, status: 'ACTIVO', numero_economico: '', hora_entrega: '', observaciones: '',
+  cantidad: 1, status: 'ACTIVO', numero_economico: '', numero_serie: '', observaciones: '',
 }
-const ITEM_VACIO = { producto: null, cantidad: 1, numero_economico: '' }
+const ITEM_VACIO = {
+  producto: null, cantidad: 1, numero_economico: '', numero_serie: '',
+  fotoProducto: null, fotoNumeroSerie: null, fotosExtra: [],
+}
 const MAX_HERRAMIENTAS = 6
 
 export default function MovimientoFormDialog({ open, onClose, onSaved, movimiento, empleados, productos }) {
   const [form, setForm] = useState(VACIO)
   const [empleadoSel, setEmpleadoSel] = useState(null)
   // Un vale nuevo (SALIDA) puede llevar hasta 6 herramientas — cada una con
-  // su propio producto/cantidad/número económico; al editar o en ENTRADA
-  // siempre es un solo elemento (items[0]).
+  // su propio producto/cantidad/número económico/fotos; al editar o en
+  // ENTRADA siempre es un solo elemento (items[0]).
   const [items, setItems] = useState([ITEM_VACIO])
   const [fotoVale, setFotoVale] = useState(null)
+  // Solo se usan al editar un movimiento YA existente que no es un vale de
+  // SALIDA (ENTRADA) — ahí no hay "items[]", es un solo renglón; se quedan
+  // en espera y se suben junto con el resto al darle Guardar (igual que
+  // fotoVale/firma), no de inmediato como la galería de fotos adicionales.
   const [fotoProducto, setFotoProducto] = useState(null)
   const [fotoNumeroSerie, setFotoNumeroSerie] = useState(null)
   const [firma, setFirma] = useState(null)
   const [nombreEntrega, setNombreEntrega] = useState('')
+  const [fotosExistentes, setFotosExistentes] = useState([])
   const [guardando, setGuardando] = useState(false)
   const [aviso, setAviso] = useState('')
 
-  // Un vale de SALIDA ya hecho solo se puede corregir en el nombre de quien
-  // entrega y su firma — el resto (folio, herramienta, cantidad, a quién se
-  // le entregó) no se edita aquí; para mover la herramienta a otra persona
-  // está el traspaso (ver TraspasoDialog).
+  // Un vale de SALIDA ya hecho solo se puede corregir en nombre/# económico/#
+  // serie de entrega y su firma — el resto (folio, herramienta, cantidad, a
+  // quién se le entregó) no se edita aquí; para mover la herramienta a otra
+  // persona está el traspaso (ver TraspasoDialog).
   const esEdicionSalida = !!movimiento && movimiento.tipo_movimiento === 'SALIDA'
 
   useEffect(() => {
@@ -53,6 +68,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
     setFotoNumeroSerie(null)
     setFirma(null)
     setNombreEntrega(movimiento?.nombre_usuario_entrega || '')
+    setFotosExistentes(movimiento?.fotos || [])
     setAviso('')
     setForm(movimiento ? {
       fecha_movimiento: movimiento.fecha_movimiento,
@@ -61,9 +77,9 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       cantidad: movimiento.cantidad,
       status: movimiento.status || 'ACTIVO',
       numero_economico: movimiento.numero_economico || '',
-      hora_entrega: movimiento.hora_entrega || '',
+      numero_serie: movimiento.numero_serie || '',
       observaciones: movimiento.observaciones || '',
-    } : VACIO)
+    } : { ...VACIO, fecha_movimiento: dayjs().format('YYYY-MM-DD') })
   }, [open, movimiento])
 
   const actualizarItem = (i, cambios) => {
@@ -79,11 +95,22 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
     if (tipo !== 'SALIDA' && items.length > 1) setItems([items[0]])
   }
 
+  // Agregar/quitar una foto "adicional" de un movimiento que YA existe (ya
+  // tiene row_id) — se sube/borra de inmediato, no se espera a Guardar.
+  const agregarFotoExistente = async (archivo) => {
+    const actualizado = await agregarFotoMovimiento(movimiento.row_id, archivo)
+    setFotosExistentes(actualizado.fotos || [])
+  }
+  const quitarFotoExistente = async (fotoId) => {
+    const actualizado = await quitarFotoMovimiento(movimiento.row_id, fotoId)
+    setFotosExistentes(actualizado.fotos || [])
+  }
+
   const guardar = async () => {
     if (esEdicionSalida) {
-      // Edición restringida: solo nombre y firma de entrega — el vale ya
-      // impreso (folio, herramienta, empleado) no cambia. El backend
-      // regenera solo el PDF ("Foto Vale de Salida") con el nombre nuevo.
+      // Edición restringida: nombre/# económico/# serie de entrega y firma —
+      // el vale ya impreso (folio, herramienta, empleado) no cambia. El
+      // backend regenera el PDF ("Foto Vale de Salida") si hace falta.
       setGuardando(true)
       setAviso('')
       try {
@@ -91,7 +118,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
         await actualizarMovimiento(rowId, {
           nombre_usuario_entrega: nombreEntrega,
           numero_economico: form.numero_economico || null,
-          hora_entrega: form.hora_entrega || null,
+          numero_serie: form.numero_serie || null,
         })
         if (firma) await subirFirma(rowId, firma)
         onSaved(rowId)
@@ -122,7 +149,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
         const creado = await crearMovimiento({
           ...form,
           numero_economico: items[0].numero_economico,
-          hora_entrega: form.hora_entrega || null,
+          numero_serie: items[0].numero_serie,
           cantidad: items[0].cantidad,
           id_numero_empleado: empleadoSel.id_numero_empleado,
           codigo_sai_sku: items[0].producto.codigo_sai_sku,
@@ -131,17 +158,19 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
         rowIds = [rowId]
       } else {
         // Varias herramientas: un solo vale (un solo folio), un renglón por
-        // herramienta — ver /movimientos/salida-multiple.
+        // herramienta — ver /movimientos/salida-multiple. El orden de los
+        // renglones que regresa coincide con el de "items" (mismo orden en
+        // que se mandaron), así que se pueden emparejar 1 a 1 con rowIds.
         const creados = await crearSalidaMultiple({
           fecha_movimiento: form.fecha_movimiento,
           id_numero_empleado: empleadoSel.id_numero_empleado,
           status: form.status,
-          hora_entrega: form.hora_entrega || null,
           observaciones: form.observaciones,
           items: items.map((it) => ({
             codigo_sai_sku: it.producto.codigo_sai_sku,
             cantidad: it.cantidad,
             numero_economico: it.numero_economico || null,
+            numero_serie: it.numero_serie || null,
           })),
         })
         rowIds = creados.map((c) => c.row_id)
@@ -169,14 +198,28 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       // En paralelo — no hay dependencia entre ellas, y subirlas una por una
       // sumaba varios segundos extra a cada guardado. Foto de vale y firma
       // son del vale completo (una sola hoja), así que se suben a cada
-      // renglón creado; foto de producto/número de serie son de UNA
-      // herramienta puntual, solo aplican cuando el vale trae una sola.
+      // renglón creado; foto de producto/número de serie/fotos extra son por
+      // herramienta, así que cada item se sube a SU propio row_id (mismo
+      // orden en que se crearon).
       try {
         await Promise.all([
           fotoVale && Promise.all(rowIds.map((id) => subirFotoVale(id, fotoVale))),
           firma && Promise.all(rowIds.map((id) => subirFirma(id, firma))),
-          items.length === 1 && fotoProducto && subirFotoProductoMovimiento(rowId, fotoProducto),
-          items.length === 1 && fotoNumeroSerie && subirFotoNumeroSerie(rowId, fotoNumeroSerie),
+          // Al editar un movimiento ENTRADA ya existente (un solo renglón,
+          // no hay "items[]" real): foto producto/# serie quedan en espera
+          // en el estado global de arriba.
+          movimiento && fotoProducto && subirFotoProductoMovimiento(rowId, fotoProducto),
+          movimiento && fotoNumeroSerie && subirFotoNumeroSerie(rowId, fotoNumeroSerie),
+          // Vale nuevo (uno o varios renglones): cada item sube sus propias
+          // fotos a SU row_id (mismo orden en que se crearon).
+          ...(!movimiento ? items.flatMap((item, i) => {
+            const rid = rowIds[i]
+            const tareas = []
+            if (item.fotoProducto) tareas.push(subirFotoProductoMovimiento(rid, item.fotoProducto))
+            if (item.fotoNumeroSerie) tareas.push(subirFotoNumeroSerie(rid, item.fotoNumeroSerie))
+            for (const extra of item.fotosExtra) tareas.push(agregarFotoMovimiento(rid, extra))
+            return tareas
+          }) : []),
         ])
       } catch (err) {
         huboProblema = true
@@ -208,7 +251,10 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
             <>
               <TextField label="Fecha Movimiento" value={form.fecha_movimiento} disabled fullWidth />
               <TextField label="Número de vale" value={form.numero_de_vale} disabled fullWidth />
-              <TextField label="Hora de inicio (generado)" value={formatoFechaHora(movimiento.creado_en)} disabled fullWidth />
+              <Stack direction="row" spacing={2}>
+                <TextField label="Hora de inicio (generado)" value={formatoFechaHora(movimiento.creado_en)} disabled fullWidth />
+                <TextField label="Hora de fin (generado)" value={movimiento.hora_entrega || ''} disabled fullWidth />
+              </Stack>
               <Stack spacing={0.5}>
                 <Typography variant="caption" color="text.secondary">Nombre de Empleado</Typography>
                 <Typography>{movimiento.nombre_de_empleado}</Typography>
@@ -227,10 +273,9 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
                 <TextField label="Cantidad" value={form.cantidad} disabled fullWidth />
               </Stack>
               <TextField
-                label="Hora de fin (entrega real)" type="time" fullWidth slotProps={{ inputLabel: { shrink: true } }}
-                value={form.hora_entrega}
-                onChange={(e) => setForm({ ...form, hora_entrega: e.target.value })}
-                helperText="Hora real en que la herramienta salió/se entregó, si es distinta a cuando se generó el vale."
+                label="Número de serie" fullWidth
+                value={form.numero_serie}
+                onChange={(e) => setForm({ ...form, numero_serie: e.target.value })}
               />
 
               <TextField
@@ -252,26 +297,22 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
                 </Stack>
               )}
 
+              <GaleriaFotosExistentes fotos={fotosExistentes} onAdd={agregarFotoExistente} onDelete={quitarFotoExistente} />
+
               <TextField label="Observaciones" value={form.observaciones} disabled fullWidth multiline minRows={2} />
             </>
           ) : (
             <>
-              <Stack direction="row" spacing={2}>
-                <TextField
-                  label="Fecha Movimiento" required type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }}
-                  value={form.fecha_movimiento}
-                  onChange={(e) => setForm({ ...form, fecha_movimiento: e.target.value })}
-                />
-                {form.tipo_movimiento === 'SALIDA' && (
-                  <TextField
-                    label="Hora de fin (entrega real)" type="time" fullWidth slotProps={{ inputLabel: { shrink: true } }}
-                    value={form.hora_entrega}
-                    onChange={(e) => setForm({ ...form, hora_entrega: e.target.value })}
-                  />
-                )}
-              </Stack>
+              <TextField
+                label="Fecha Movimiento" required type="date" fullWidth slotProps={{ inputLabel: { shrink: true } }}
+                value={form.fecha_movimiento}
+                onChange={(e) => setForm({ ...form, fecha_movimiento: e.target.value })}
+              />
               {movimiento && (
-                <TextField label="Hora de inicio (generado)" value={formatoFechaHora(movimiento.creado_en)} disabled fullWidth />
+                <Stack direction="row" spacing={2}>
+                  <TextField label="Hora de inicio (generado)" value={formatoFechaHora(movimiento.creado_en)} disabled fullWidth />
+                  <TextField label="Hora de fin (generado)" value={movimiento.hora_entrega || ''} disabled fullWidth />
+                </Stack>
               )}
               <TextField
                 label="Número de vale" fullWidth
@@ -339,6 +380,22 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
                       onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
                     />
                   </Stack>
+                  <TextField
+                    label="Número de serie" fullWidth
+                    value={form.numero_serie}
+                    onChange={(e) => setForm({ ...form, numero_serie: e.target.value })}
+                  />
+                  <CampoFoto
+                    label="Foto Producto"
+                    thumb={fotoProducto ? URL.createObjectURL(fotoProducto) : movimiento?.foto_producto_snapshot}
+                    onChange={setFotoProducto}
+                  />
+                  <CampoFoto
+                    label="Foto # Numero Serie"
+                    thumb={fotoNumeroSerie ? URL.createObjectURL(fotoNumeroSerie) : movimiento?.foto_numero_serie}
+                    onChange={setFotoNumeroSerie}
+                  />
+                  <GaleriaFotosExistentes fotos={fotosExistentes} onAdd={agregarFotoExistente} onDelete={quitarFotoExistente} />
                 </>
               ) : (
                 <Stack spacing={1.5}>
@@ -373,6 +430,26 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
                           onChange={(e) => actualizarItem(i, { cantidad: e.target.value })}
                         />
                       </Stack>
+                      <TextField
+                        label="Número de serie" fullWidth
+                        value={item.numero_serie}
+                        onChange={(e) => actualizarItem(i, { numero_serie: e.target.value })}
+                      />
+                      <CampoFoto
+                        label="Foto Producto"
+                        thumb={item.fotoProducto ? URL.createObjectURL(item.fotoProducto) : item.producto?.foto_producto}
+                        onChange={(archivo) => actualizarItem(i, { fotoProducto: archivo })}
+                      />
+                      <CampoFoto
+                        label="Foto # Numero Serie"
+                        thumb={item.fotoNumeroSerie ? URL.createObjectURL(item.fotoNumeroSerie) : null}
+                        onChange={(archivo) => actualizarItem(i, { fotoNumeroSerie: archivo })}
+                      />
+                      <FotosMultiples
+                        label="Fotos adicionales de la herramienta"
+                        value={item.fotosExtra}
+                        onChange={(fotos) => actualizarItem(i, { fotosExtra: fotos })}
+                      />
                     </Stack>
                   ))}
                   {form.tipo_movimiento === 'SALIDA' && items.length < MAX_HERRAMIENTAS && items[items.length - 1].producto && (
@@ -381,25 +458,6 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
                     </Button>
                   )}
                 </Stack>
-              )}
-
-              {items.length === 1 && (
-                <>
-                  <CampoFoto
-                    label="Foto Producto"
-                    thumb={
-                      fotoProducto
-                        ? URL.createObjectURL(fotoProducto)
-                        : movimiento?.foto_producto_snapshot || items[0].producto?.foto_producto
-                    }
-                    onChange={setFotoProducto}
-                  />
-                  <CampoFoto
-                    label="Foto # Numero Serie"
-                    thumb={fotoNumeroSerie ? URL.createObjectURL(fotoNumeroSerie) : movimiento?.foto_numero_serie}
-                    onChange={setFotoNumeroSerie}
-                  />
-                </>
               )}
 
               <SignaturePad onChange={setFirma} required={!movimiento} />

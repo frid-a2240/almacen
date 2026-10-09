@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { IconButton, Tooltip, Snackbar, Alert } from '@mui/material'
+import { IconButton, Tooltip } from '@mui/material'
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined'
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
 import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined'
@@ -8,11 +8,11 @@ import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined'
 import { useNavigate } from 'react-router-dom'
 import DetailPanel from './DetailPanel.jsx'
 import RelatedTable from './RelatedTable.jsx'
+import NoAdeudoDialog from './NoAdeudoDialog.jsx'
 import { formatoFecha } from '../utils/formatters.js'
 import { columnasMovimientoCompletas } from '../config/movimientoColumns.jsx'
-import { descargarResguardoExcel, descargarHistoricoExcel, obtenerResguardoPdf, obtenerNoAdeudoPdf } from '../api/empleados.js'
+import { descargarResguardoExcel, descargarHistoricoExcel, obtenerResguardoPdf } from '../api/empleados.js'
 import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
-import { mensajeDeError } from '../api/client.js'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function EmpleadoDetailPanel({ empleado, departamentos, movimientos, onEdit, onDelete, onClose }) {
@@ -23,8 +23,7 @@ export default function EmpleadoDetailPanel({ empleado, departamentos, movimient
   const [descargando, setDescargando] = useState(false)
   const [descargandoHistorico, setDescargandoHistorico] = useState(false)
   const [imprimiendo, setImprimiendo] = useState(false)
-  const [imprimiendoNoAdeudo, setImprimiendoNoAdeudo] = useState(false)
-  const [avisoNoAdeudo, setAvisoNoAdeudo] = useState('')
+  const [noAdeudoAbierto, setNoAdeudoAbierto] = useState(false)
 
   const descargarResguardo = async () => {
     setDescargando(true)
@@ -57,20 +56,6 @@ export default function EmpleadoDetailPanel({ empleado, departamentos, movimient
       throw err
     } finally {
       setImprimiendo(false)
-    }
-  }
-
-  const imprimirNoAdeudo = async () => {
-    const ventanaImpresion = abrirVentanaImpresion()
-    setImprimiendoNoAdeudo(true)
-    try {
-      const pdf = await obtenerNoAdeudoPdf(empleado.id_numero_empleado)
-      await imprimirPdf(pdf, `no_adeudo_${empleado.id_numero_empleado}`, ventanaImpresion)
-    } catch (err) {
-      ventanaImpresion?.close()
-      setAvisoNoAdeudo(mensajeDeError(err) || 'No se pudo generar la constancia de no adeudo.')
-    } finally {
-      setImprimiendoNoAdeudo(false)
     }
   }
 
@@ -109,9 +94,9 @@ export default function EmpleadoDetailPanel({ empleado, departamentos, movimient
             </Tooltip>
           )}
           {puedeImprimir && (
-            <Tooltip title="Constancia de No Adeudo (para dar de baja)">
+            <Tooltip title="Constancia de No Adeudo">
               <span>
-                <IconButton size="small" onClick={imprimirNoAdeudo} disabled={imprimiendoNoAdeudo} sx={{ color: 'text.secondary' }}>
+                <IconButton size="small" onClick={() => setNoAdeudoAbierto(true)} sx={{ color: 'text.secondary' }}>
                   <FactCheckOutlinedIcon fontSize="small" />
                 </IconButton>
               </span>
@@ -147,11 +132,7 @@ export default function EmpleadoDetailPanel({ empleado, departamentos, movimient
         columns={columnasMovimientoCompletas()}
       />
     </DetailPanel>
-    <Snackbar open={!!avisoNoAdeudo} autoHideDuration={6000} onClose={() => setAvisoNoAdeudo('')}>
-      <Alert severity="warning" onClose={() => setAvisoNoAdeudo('')} sx={{ width: '100%' }}>
-        {avisoNoAdeudo}
-      </Alert>
-    </Snackbar>
+    <NoAdeudoDialog open={noAdeudoAbierto} onClose={() => setNoAdeudoAbierto(false)} empleado={empleado} />
     </>
   )
 }

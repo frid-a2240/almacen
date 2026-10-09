@@ -17,6 +17,7 @@ export function columnasMovimientoCompletas() {
     { field: 'descripcion', headerName: 'Descripcion' },
     { field: 'udm', headerName: 'UDM' },
     { field: 'numero_economico', headerName: 'Numero Economico' },
+    { field: 'numero_serie', headerName: 'Numero de Serie' },
     { field: 'clase_familia', headerName: 'Clase / Familia' }, 
     { field: 'cantidad', headerName: 'Cantidad' },
     { field: 'foto_producto_snapshot', headerName: 'Foto Producto', renderCell: (m) => <Thumbnail src={m.foto_producto_snapshot} size={32} /> },

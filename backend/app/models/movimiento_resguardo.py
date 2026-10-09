@@ -42,6 +42,7 @@ class MovimientoResguardo(Base):
     descripcion_snapshot = Column("descripcion", String, nullable=True)
     udm = Column(String(20), nullable=True)
     numero_economico = Column(String(50), nullable=True)
+    numero_serie = Column(String(100), nullable=True)
     clase_familia = Column(String(150), nullable=True)
     costo_unitario = Column(Numeric(12, 2), nullable=True)
 
@@ -53,6 +54,10 @@ class MovimientoResguardo(Base):
 
     empleado_ref = relationship("Empleado")
     producto_ref = relationship("Producto")
+    fotos = relationship(
+        "MovimientoFoto", order_by="MovimientoFoto.orden",
+        cascade="all, delete-orphan", back_populates="movimiento",
+    )
 
     @property
     def descripcion(self):

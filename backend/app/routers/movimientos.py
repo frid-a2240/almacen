@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import MovimientoResguardo, Empleado, Producto, Usuario
+from app.models import MovimientoResguardo, MovimientoFoto, Empleado, Producto, Usuario
 from app.schemas.movimiento_resguardo import (
     MovimientoOut, MovimientoCreate, MovimientoUpdate, SalidaMultipleCreate, TraspasoCreate,
 )
@@ -38,6 +38,7 @@ def _con_referencias(query):
     return query.options(
         joinedload(MovimientoResguardo.producto_ref),
         joinedload(MovimientoResguardo.empleado_ref),
+        joinedload(MovimientoResguardo.fotos),
     )
 
 
@@ -73,18 +74,23 @@ def _fila_movimiento(
     db: Session, *, empleado: Empleado, producto: Producto, usuario: Usuario,
     fecha_movimiento, numero_de_vale, tipo_movimiento: str, status: str,
     cantidad, numero_economico: str | None, observaciones: str | None,
-    id_traspaso: str | None = None, hora_entrega: str | None = None,
+    id_traspaso: str | None = None, numero_serie: str | None = None,
     creado_en: datetime | None = None,
 ) -> MovimientoResguardo:
     """Arma UN renglón (una herramienta) del movimiento — reusado tanto por el
     alta de un solo producto (ENTRADA, o edición) como por el vale con varias
     herramientas (POST /salida-multiple), donde se llama una vez por cada
-    herramienta pero TODAS comparten el mismo numero_de_vale."""
+    herramienta pero TODAS comparten el mismo numero_de_vale.
+
+    Hora de inicio (creado_en) y hora de fin (hora_entrega) son ambas
+    automáticas — nadie las captura a mano — así que se calculan del mismo
+    timestamp del servidor, no de lo que mande el cliente."""
+    ahora = creado_en or datetime.now()
     return MovimientoResguardo(
         row_id=_nuevo_row_id(db),
         fecha_movimiento=fecha_movimiento,
-        creado_en=creado_en or datetime.now(),
-        hora_entrega=hora_entrega,
+        creado_en=ahora,
+        hora_entrega=ahora.strftime("%H:%M"),
         numero_de_vale=numero_de_vale,
         tipo_movimiento=tipo_movimiento,
         id_traspaso=id_traspaso,
@@ -103,6 +109,7 @@ def _fila_movimiento(
         descripcion_snapshot=producto.descripcion,
         udm=producto.udm,
         numero_economico=numero_economico or producto.numero_economico,
+        numero_serie=numero_serie,
         clase_familia=producto.clase_familia_ref.clase_familia if producto.clase_familia_ref else None,
         costo_unitario=producto.costo_unitario,
         cantidad=cantidad,
@@ -199,7 +206,7 @@ def crear(
         fecha_movimiento=datos.fecha_movimiento, numero_de_vale=numero_de_vale,
         tipo_movimiento=datos.tipo_movimiento, status=datos.status,
         cantidad=datos.cantidad, numero_economico=datos.numero_economico,
-        observaciones=datos.observaciones, hora_entrega=datos.hora_entrega,
+        numero_serie=datos.numero_serie, observaciones=datos.observaciones,
     )
     db.add(mov)
     db.commit()
@@ -242,7 +249,7 @@ def crear_salida_multiple(
             fecha_movimiento=datos.fecha_movimiento, numero_de_vale=numero_de_vale,
             tipo_movimiento="SALIDA", status=datos.status,
             cantidad=item.cantidad, numero_economico=item.numero_economico,
-            observaciones=datos.observaciones, hora_entrega=datos.hora_entrega,
+            numero_serie=item.numero_serie, observaciones=datos.observaciones,
             creado_en=ahora,
         )
         for item in datos.items
@@ -303,6 +310,7 @@ def traspaso(
         fecha_movimiento=datos.fecha_movimiento, numero_de_vale=None,
         tipo_movimiento="ENTRADA", status="ACTIVO",
         cantidad=cantidad, numero_economico=origen_mov.numero_economico,
+        numero_serie=origen_mov.numero_serie,
         observaciones=obs_origen, id_traspaso=id_traspaso,
     )
     fila_destino = _fila_movimiento(
@@ -310,6 +318,7 @@ def traspaso(
         fecha_movimiento=datos.fecha_movimiento, numero_de_vale=siguiente_folio(db),
         tipo_movimiento="SALIDA", status="ACTIVO",
         cantidad=cantidad, numero_economico=origen_mov.numero_economico,
+        numero_serie=origen_mov.numero_serie,
         observaciones=obs_destino, id_traspaso=id_traspaso,
     )
     db.add_all([fila_origen, fila_destino])
@@ -350,12 +359,12 @@ def actualizar(
 
     cambios = datos.model_dump(exclude_unset=True)
     # En un vale de SALIDA, editar solo debe poder corregir lo que se
-    # reimprime en el vale (nombre de quien entrega, número económico, hora
-    # de entrega) y su firma (subida aparte, ver POST .../firma) — el resto
-    # del vale (folio, herramienta, empleado que recibe) no se toca desde
-    # aquí; para mover la herramienta a otra persona está el traspaso.
+    # reimprime en el vale (nombre de quien entrega, número económico, número
+    # de serie) y su firma (subida aparte, ver POST .../firma) — el resto del
+    # vale (folio, herramienta, empleado que recibe) no se toca desde aquí;
+    # para mover la herramienta a otra persona está el traspaso.
     if mov.tipo_movimiento == "SALIDA":
-        cambios = {k: v for k, v in cambios.items() if k in ("nombre_usuario_entrega", "numero_economico", "hora_entrega")}
+        cambios = {k: v for k, v in cambios.items() if k in ("nombre_usuario_entrega", "numero_economico", "numero_serie")}
 
     if "numero_economico" in cambios and cambios["numero_economico"] != mov.numero_economico:
         registrar_cambio(
@@ -369,7 +378,7 @@ def actualizar(
     db.commit()
     db.refresh(mov)
 
-    if mov.tipo_movimiento == "SALIDA" and cambios.keys() & {"nombre_usuario_entrega", "numero_economico", "hora_entrega"}:
+    if mov.tipo_movimiento == "SALIDA" and cambios.keys() & {"nombre_usuario_entrega", "numero_economico"}:
         _guardar_vale_generado(db, [mov])
         db.refresh(mov)
     return mov
@@ -426,3 +435,31 @@ def subir_foto_numero_serie(row_id: str, archivo: UploadFile = File(...), db: Se
 @router.post("/{row_id}/firma", response_model=MovimientoOut)
 def subir_firma(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     return _subir(row_id, db, archivo, "firma_recibido_conformidad", "FIRMA_DE_RECIBIDO_Y_CONFORMIDAD")
+
+
+@router.post("/{row_id}/fotos", response_model=MovimientoOut)
+def agregar_foto(row_id: str, archivo: UploadFile = File(...), db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
+    """Fotos adicionales de la herramienta — número libre, no las 2 fijas
+    (Foto Producto/Foto # Numero Serie): sirve para cuando hace falta más de
+    una (varios ángulos, detalle de un daño, etc.)."""
+    mov = db.get(MovimientoResguardo, row_id)
+    if not mov:
+        raise HTTPException(404, "Movimiento no encontrado")
+    orden = len(mov.fotos)
+    ruta = guardar_archivo(archivo, "CONTROL_DE_RESGUARDO", f"{row_id}_{orden}", "FOTO_EXTRA")
+    mov.fotos.append(MovimientoFoto(orden=orden, foto=ruta))
+    db.commit()
+    db.refresh(mov)
+    return mov
+
+
+@router.delete("/{row_id}/fotos/{foto_id}", response_model=MovimientoOut)
+def quitar_foto(row_id: str, foto_id: int, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
+    foto = db.query(MovimientoFoto).filter(MovimientoFoto.id == foto_id, MovimientoFoto.row_id == row_id).first()
+    if not foto:
+        raise HTTPException(404, "Foto no encontrada")
+    db.delete(foto)
+    db.commit()
+    mov = db.get(MovimientoResguardo, row_id)
+    db.refresh(mov)
+    return mov

@@ -22,3 +22,5 @@ export const subirFotoVale = (rowId, archivo) => subirArchivo(rowId, 'foto-vale'
 export const subirFotoProductoMovimiento = (rowId, archivo) => subirArchivo(rowId, 'foto-producto', archivo)
 export const subirFotoNumeroSerie = (rowId, archivo) => subirArchivo(rowId, 'foto-numero-serie', archivo)
 export const subirFirma = (rowId, archivo) => subirArchivo(rowId, 'firma', archivo)
+export const agregarFotoMovimiento = (rowId, archivo) => subirArchivo(rowId, 'fotos', archivo)
+export const quitarFotoMovimiento = (rowId, fotoId) => client.delete(`/movimientos/${rowId}/fotos/${fotoId}`).then((r) => r.data)

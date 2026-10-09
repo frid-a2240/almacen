@@ -49,6 +49,10 @@ def asegurar_columnas():
             "ALTER TABLE movimientos_resguardo "
             "ADD COLUMN IF NOT EXISTS hora_entrega VARCHAR(5)"
         ))
+        conn.execute(text(
+            "ALTER TABLE movimientos_resguardo "
+            "ADD COLUMN IF NOT EXISTS numero_serie VARCHAR(100)"
+        ))
 
 
 def asegurar_tablas_nuevas():
@@ -59,10 +63,10 @@ def asegurar_tablas_nuevas():
     from app.models import (
         BajaHerramienta, BajaHerramientaItem, BajaHerramientaFoto,
         IncidenciaHerramienta, IncidenciaHerramientaItem,
-        HistorialNumeroEconomico,
+        HistorialNumeroEconomico, MovimientoFoto,
     )
     Base.metadata.create_all(bind=engine, tables=[
         BajaHerramienta.__table__, BajaHerramientaItem.__table__, BajaHerramientaFoto.__table__,
         IncidenciaHerramienta.__table__, IncidenciaHerramientaItem.__table__,
-        HistorialNumeroEconomico.__table__,
+        HistorialNumeroEconomico.__table__, MovimientoFoto.__table__,
     ])

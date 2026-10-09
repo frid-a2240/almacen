@@ -13,7 +13,7 @@ class MovimientoCreate(BaseModel):
     cantidad: Decimal
     status: str = "ACTIVO"
     numero_economico: Optional[str] = None
-    hora_entrega: Optional[str] = None
+    numero_serie: Optional[str] = None
     observaciones: Optional[str] = None
 
 
@@ -21,6 +21,7 @@ class ItemVale(BaseModel):
     codigo_sai_sku: str
     cantidad: Decimal
     numero_economico: Optional[str] = None
+    numero_serie: Optional[str] = None
 
 
 class SalidaMultipleCreate(BaseModel):
@@ -28,7 +29,6 @@ class SalidaMultipleCreate(BaseModel):
     fecha_movimiento: date
     id_numero_empleado: str
     status: str = "ACTIVO"
-    hora_entrega: Optional[str] = None
     observaciones: Optional[str] = None
     items: list[ItemVale]
 
@@ -45,7 +45,14 @@ class MovimientoUpdate(BaseModel):
     # PDF del vale (mismo folio) con el dato actualizado.
     nombre_usuario_entrega: Optional[str] = None
     numero_economico: Optional[str] = None
-    hora_entrega: Optional[str] = None
+    numero_serie: Optional[str] = None
+
+
+class MovimientoFotoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    foto: Optional[str] = None
 
 
 class TraspasoCreate(BaseModel):
@@ -84,6 +91,7 @@ class MovimientoOut(BaseModel):
     descripcion: Optional[str] = None
     udm: Optional[str] = None
     numero_economico: Optional[str] = None
+    numero_serie: Optional[str] = None
     clase_familia: Optional[str] = None
     costo_unitario: Optional[Decimal] = None
     cantidad: Decimal
@@ -91,3 +99,4 @@ class MovimientoOut(BaseModel):
     foto_numero_serie: Optional[str] = None
     firma_recibido_conformidad: Optional[str] = None
     observaciones: Optional[str] = None
+    fotos: list[MovimientoFotoOut] = []

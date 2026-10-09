@@ -11,6 +11,10 @@ import CampoFoto from './CampoFoto.jsx'
 import { crearBajaHerramienta, agregarFotoBaja, obtenerBajaHerramientaPdf } from '../api/bajasHerramienta.js'
 import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
 
+// fecha de aquí solo sirve de relleno inicial del módulo — se recalcula al
+// abrir el diálogo (ver useEffect) porque, si la pestaña se queda abierta
+// de un día para otro, esta constante (evaluada una sola vez al cargar la
+// página) se queda con la fecha de ayer.
 const VACIO = { folio: '', fecha: dayjs().format('YYYY-MM-DD'), observaciones: '' }
 const ITEM_VACIO = { producto: null, numero_economico: '', diagnostico: '' }
 const MAX_HERRAMIENTAS = 20
@@ -29,7 +33,7 @@ export default function BajaHerramientaFormDialog({ open, onClose, onSaved, empl
 
   useEffect(() => {
     if (!open) return
-    setForm(VACIO)
+    setForm({ ...VACIO, fecha: dayjs().format('YYYY-MM-DD') })
     setTecnicoSel(null)
     setAlmacenistaSel(null)
     setItems([ITEM_VACIO])

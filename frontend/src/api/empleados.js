@@ -16,8 +16,8 @@ export const subirFotoEmpleado = (id, archivo) => {
 export const obtenerResguardoPdf = (id) =>
   client.get(`/empleados/${id}/resguardo-pdf`, { responseType: 'arraybuffer' }).then((r) => r.data)
 
-export const obtenerNoAdeudoPdf = (id) =>
-  client.get(`/empleados/${id}/no-adeudo-pdf`, { responseType: 'arraybuffer' }).then((r) => r.data)
+export const obtenerNoAdeudoPdf = (id, datos = { items: [] }) =>
+  client.post(`/empleados/${id}/no-adeudo-pdf`, datos, { responseType: 'arraybuffer' }).then((r) => r.data)
 
 export const descargarResguardoExcel = async (id) => {
   const respuesta = await client.get(`/empleados/${id}/resguardo-excel`, { responseType: 'blob' })

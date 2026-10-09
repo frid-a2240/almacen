@@ -24,7 +24,7 @@ la plantilla en Carta (612x792pt) — DELTA_COPIA_2 es la distancia vertical
 entre la copia de arriba y la de abajo: es EXACTA (394.784pt), la misma que
 se usó para apilar las dos copias, no una medición aproximada.
 """
-from datetime import date, datetime
+from datetime import date
 from io import BytesIO
 from pathlib import Path
 
@@ -105,12 +105,6 @@ def _campos_copia(c, m, d):
     # Folio / No.: celda angosta a la derecha del título, debajo del
     # encabezado "No." en rojo.
     _texto(c, 548.5, 40.8 + d, str(m.get("numero_de_vale") or ""), size=11, center=True)
-    # Hora de inicio: hora exacta (automática) en que se generó el vale en el
-    # sistema — va en la celda "Folio:" de la plantilla, que no se usaba para
-    # nada (el consecutivo real se imprime bajo "No.", en rojo).
-    creado_en = m.get("creado_en")
-    if isinstance(creado_en, datetime):
-        _texto(c, 478, 41 + d, f"Hora: {creado_en.strftime('%H:%M')}", size=6.5, center=True, max_width=46, size_min=5)
 
     # No. de Empleado / Nombre Completo / Puesto: una sola línea cada uno,
     # el valor a la derecha de su etiqueta — el "top" que da pdfplumber para

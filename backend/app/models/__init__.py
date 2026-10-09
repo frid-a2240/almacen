@@ -3,6 +3,7 @@ from app.models.clase_familia import ClaseFamilia
 from app.models.empleado import Empleado
 from app.models.producto import Producto
 from app.models.movimiento_resguardo import MovimientoResguardo
+from app.models.movimiento_foto import MovimientoFoto
 from app.models.usuario import Usuario
 from app.models.baja_herramienta import BajaHerramienta, BajaHerramientaItem, BajaHerramientaFoto
 from app.models.incidencia_herramienta import IncidenciaHerramienta, IncidenciaHerramientaItem
@@ -14,6 +15,7 @@ __all__ = [
     "Empleado",
     "Producto",
     "MovimientoResguardo",
+    "MovimientoFoto",
     "Usuario",
     "BajaHerramienta",
     "BajaHerramientaItem",
