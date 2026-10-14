@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Text, ForeignKey
+from sqlalchemy import Column, Integer, Numeric, String, Date, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -8,8 +8,8 @@ class BajaHerramienta(Base):
     movimiento de Control de Resguardo, esto NO es un préstamo — la
     herramienta sale del inventario para siempre, así que no usa la tabla
     movimientos_resguardo (que es de custodia/resguardo). El stock baja vía
-    services/stock.py, que descuenta 1 por cada renglón (BajaHerramientaItem)
-    ligado al producto."""
+    services/stock.py, que descuenta la `cantidad` de cada renglón
+    (BajaHerramientaItem) ligado al producto."""
     __tablename__ = "bajas_herramienta"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -69,7 +69,8 @@ class BajaHerramienta(Base):
 
 class BajaHerramientaItem(Base):
     """Un renglón de la tabla de herramientas de la baja (SKU + # económico +
-    diagnóstico) — cada renglón resta 1 al stock calculado del producto."""
+    cantidad + diagnóstico) — `cantidad` se resta del stock calculado del
+    producto (ver services/stock.py)."""
     __tablename__ = "baja_herramienta_items"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -80,6 +81,10 @@ class BajaHerramientaItem(Base):
     codigo_sai_sku = Column(String(60), nullable=True)
     descripcion_snapshot = Column(String, nullable=True)
     numero_economico = Column(String(50), nullable=True)
+    # Cuántas piezas de esa misma herramienta se dan de baja en este
+    # renglón — antes siempre se restaba 1 por renglón (ver stock.py), sin
+    # importar cuántas piezas eran en realidad.
+    cantidad = Column(Numeric(12, 2), nullable=False, default=1)
     diagnostico = Column(Text, nullable=True)
 
     baja = relationship("BajaHerramienta", back_populates="items")

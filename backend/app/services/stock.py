@@ -9,8 +9,8 @@ from app.models import Producto, MovimientoResguardo, BajaHerramientaItem
 def stock_subquery(db: Session):
     """Query base de PRODUCTOS con el STOCK calculado a partir de la bitácora
     de movimientos y las bajas de herramienta: INVENTARIO INICIAL -
-    SUM(SALIDA) + SUM(ENTRADA) - COUNT(bajas). No se guarda en la tabla
-    productos para que nunca se desincronice del ledger real.
+    SUM(SALIDA) + SUM(ENTRADA) - SUM(cantidad de bajas). No se guarda en la
+    tabla productos para que nunca se desincronice del ledger real.
 
     Subqueries correlacionadas (no JOIN) a propósito: movimientos y bajas son
     dos relaciones "uno a muchos" independientes contra productos — juntarlas
@@ -35,7 +35,7 @@ def stock_subquery(db: Session):
         .scalar_subquery()
     )
     baja_sq = (
-        db.query(func.coalesce(func.count(BajaHerramientaItem.id), 0))
+        db.query(func.coalesce(func.sum(BajaHerramientaItem.cantidad), 0))
         .filter(BajaHerramientaItem.producto_sku == Producto.codigo_sai_sku)
         .correlate(Producto)
         .scalar_subquery()

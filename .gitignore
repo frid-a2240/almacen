@@ -4,6 +4,9 @@ backend/venv312/
 backend/.env
 backend/uploads/
 backend/uploads_thumbs/
+# APK + version.json del autoactualizador — se copian a mano al servidor
+# (binario grande que cambia completo en cada release, igual que uploads/).
+backend/descargas/
 **/__pycache__/
 *.pyc
 *.sql

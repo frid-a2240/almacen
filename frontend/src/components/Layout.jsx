@@ -3,6 +3,7 @@ import { Box } from '@mui/material'
 import { useLocation } from 'react-router-dom'
 import TopAppBar from './TopAppBar.jsx'
 import Sidebar from './Sidebar.jsx'
+import ActualizacionDialog from './ActualizacionDialog.jsx'
 import { APPBAR_HEIGHT } from './Sidebar.jsx'
 import { SearchProvider } from '../context/SearchContext.jsx'
 import useEsMovil from '../hooks/useEsMovil.js'
@@ -20,6 +21,7 @@ export default function Layout({ children }) {
   return (
     <SearchProvider>
       <Box sx={{ display: 'flex' }}>
+        <ActualizacionDialog />
         <TopAppBar onToggleSidebar={() => setSidebarAbierto((v) => !v)} />
         <Sidebar open={sidebarAbierto} esMovil={esMovil} onClose={() => setSidebarAbierto(false)} />
         <Box

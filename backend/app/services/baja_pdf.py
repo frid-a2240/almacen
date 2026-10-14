@@ -95,6 +95,23 @@ def _fecha_str(f):
     return f.strftime("%d/%m/%Y") if isinstance(f, date) else (f or "")
 
 
+def _descripcion_con_cantidad(item):
+    """La plantilla real (SGC-FORM-PAÑ-PAÑ-002) es un formato fijo de 4
+    columnas (SKU/Descripción/# Económico/Diagnóstico) — no hay dónde meter
+    una columna más sin desbaratar el documento oficial. Para que de todos
+    modos se vea cuántas piezas son de la misma herramienta, se antepone a
+    la descripción en vez de agregar una columna."""
+    cantidad = item.cantidad if item.cantidad is not None else 1
+    if float(cantidad) == 1:
+        return item.descripcion
+    # Decimal(x).normalize() no sirve solo (vuelve notación científica en
+    # enteros grandes) — comparar contra int(cantidad) y formatear a mano
+    # evita que una cantidad entera salga como "3.00" (así llega de la BD,
+    # con la escala completa de NUMERIC(12,2)).
+    texto_cant = str(int(cantidad)) if float(cantidad) == int(cantidad) else f"{cantidad:.2f}"
+    return f"({texto_cant}) {item.descripcion or ''}".strip()
+
+
 def _texto(c, x, top, texto, size=9, max_width=None, size_min=None, bold=False):
     """Dibuja texto; si no cabe en max_width, primero reduce el tamaño de
     letra (hasta size_min) y si aun así no cabe, trunca — mismo criterio que
@@ -153,7 +170,7 @@ def _encabezado(c, baja, top_fecha, top_persona, tapar_folio=False):
 
 
 def _fila_tabla(c, top, item):
-    valores = [item.codigo_sai_sku, item.descripcion, item.numero_economico, item.diagnostico]
+    valores = [item.codigo_sai_sku, _descripcion_con_cantidad(item), item.numero_economico, item.diagnostico]
     for x, ancho, valor in zip(_COL_X, _COL_ANCHO, valores):
         _texto(c, x + 3, top, valor, size=8, max_width=ancho - 5, size_min=6)
 
@@ -387,7 +404,7 @@ def _tabla_compacta(c, baja, top):
         c.setLineWidth(0.5)
         c.rect(_MARGEN_C, _y(fila_top + m["alto_fila"]), _ANCHO_UTIL_C, m["alto_fila"], fill=0, stroke=1)
         c.setFillColor(black)
-        valores = [item.codigo_sai_sku, item.descripcion, item.numero_economico, item.diagnostico]
+        valores = [item.codigo_sai_sku, _descripcion_con_cantidad(item), item.numero_economico, item.diagnostico]
         xi = _MARGEN_C
         for valor, ancho in zip(valores, _COL_ANCHO):
             _texto(c, xi + 3, fila_top + m["alto_fila"] - 9, valor, size=m["size_fila"], max_width=ancho - 5, size_min=6)

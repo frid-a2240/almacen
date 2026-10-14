@@ -33,7 +33,7 @@ def resumen(db: Session = Depends(get_db)):
     total_inicial = db.query(func.coalesce(func.sum(Producto.inventario_inicial), 0)).scalar()
     total_salida = db.query(func.coalesce(func.sum(case((m.tipo_movimiento == "SALIDA", m.cantidad), else_=0)), 0)).scalar()
     total_entrada = db.query(func.coalesce(func.sum(case((m.tipo_movimiento == "ENTRADA", m.cantidad), else_=0)), 0)).scalar()
-    total_baja = db.query(func.coalesce(func.count(BajaHerramientaItem.id), 0)).scalar()
+    total_baja = db.query(func.coalesce(func.sum(BajaHerramientaItem.cantidad), 0)).scalar()
     stock_total = float(total_inicial) - float(total_salida) + float(total_entrada) - float(total_baja)
 
     empleados_total = db.query(func.count(Empleado.id_numero_empleado)).scalar()

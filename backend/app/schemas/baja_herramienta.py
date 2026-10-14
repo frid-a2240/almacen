@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
@@ -6,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 class BajaItemIn(BaseModel):
     codigo_sai_sku: str
     numero_economico: Optional[str] = None
+    cantidad: Decimal = Decimal(1)
     diagnostico: Optional[str] = None
 
 
@@ -16,6 +18,7 @@ class BajaItemOut(BaseModel):
     codigo_sai_sku: Optional[str] = None
     descripcion: Optional[str] = None
     numero_economico: Optional[str] = None
+    cantidad: Decimal = Decimal(1)
     diagnostico: Optional[str] = None
 
 

@@ -53,6 +53,10 @@ def asegurar_columnas():
             "ALTER TABLE movimientos_resguardo "
             "ADD COLUMN IF NOT EXISTS numero_serie VARCHAR(100)"
         ))
+        conn.execute(text(
+            "ALTER TABLE baja_herramienta_items "
+            "ADD COLUMN IF NOT EXISTS cantidad NUMERIC(12, 2) NOT NULL DEFAULT 1"
+        ))
 
 
 def asegurar_tablas_nuevas():

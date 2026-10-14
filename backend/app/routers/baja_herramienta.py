@@ -81,6 +81,7 @@ def crear(datos: BajaCreate, db: Session = Depends(get_db), _=Depends(bloquear_s
             codigo_sai_sku=producto.codigo_sai_sku,
             descripcion_snapshot=producto.descripcion,
             numero_economico=item.numero_economico or producto.numero_economico,
+            cantidad=item.cantidad,
             diagnostico=item.diagnostico,
         ))
 

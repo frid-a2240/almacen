@@ -38,8 +38,11 @@ api.add_middleware(GZipMiddleware, minimum_size=1000)
 
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 asegurar_secuencia(engine)
-asegurar_columnas()
+# Primero crear las tablas nuevas (bajas_herramienta y afines) y luego
+# alterar columnas — asegurar_columnas() ya incluye un ALTER sobre una de
+# esas tablas nuevas, que fallaría si todavía no existe (DB recién creada).
 asegurar_tablas_nuevas()
+asegurar_columnas()
 # El prefijo de URL siempre es "/uploads" (el frontend lo asume fijo en
 # imageURL()), sin importar el valor de UPLOAD_DIR — que en el servidor es
 # una ruta absoluta de disco (D:\...\uploads), no algo usable como URL.
@@ -91,6 +94,15 @@ app = FastAPI()
 app.mount(f"/{ALIAS}/api", api)  # debe registrarse antes del catch-all de abajo
 
 DIST = Path(__file__).resolve().parent.parent / "dist"
+
+# Carpeta para el APK + version.json del autoactualizador del APK (ver
+# utils/actualizador.js en el frontend) — aparte de `dist` a propósito: ese
+# se borra entero en cada `npm run build` (emptyOutDir), y se perdería el
+# APK/version.json ya publicados. No viaja con git (igual que uploads/),
+# se copia a mano al servidor (ver README).
+DESCARGAS = Path(__file__).resolve().parent.parent / "descargas"
+DESCARGAS.mkdir(parents=True, exist_ok=True)
+app.mount(f"/{ALIAS}/descargas", StaticFiles(directory=DESCARGAS), name="descargas")
 
 if DIST.exists():
     app.mount(f"/{ALIAS}/assets", StaticFiles(directory=DIST / "assets"), name="assets")

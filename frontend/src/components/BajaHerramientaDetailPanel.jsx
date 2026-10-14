@@ -15,6 +15,7 @@ const COLUMNAS_ITEMS = [
   { field: 'codigo_sai_sku', headerName: 'SKU' },
   { field: 'descripcion', headerName: 'Descripción' },
   { field: 'numero_economico', headerName: '# Económico' },
+  { field: 'cantidad', headerName: 'Cantidad' },
   { field: 'diagnostico', headerName: 'Diagnóstico' },
 ]
 

@@ -16,7 +16,7 @@ import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
 // de un día para otro, esta constante (evaluada una sola vez al cargar la
 // página) se queda con la fecha de ayer.
 const VACIO = { folio: '', fecha: dayjs().format('YYYY-MM-DD'), observaciones: '' }
-const ITEM_VACIO = { producto: null, numero_economico: '', diagnostico: '' }
+const ITEM_VACIO = { producto: null, numero_economico: '', cantidad: 1, diagnostico: '' }
 const MAX_HERRAMIENTAS = 20
 
 export default function BajaHerramientaFormDialog({ open, onClose, onSaved, empleados, productos }) {
@@ -89,6 +89,7 @@ export default function BajaHerramientaFormDialog({ open, onClose, onSaved, empl
         items: items.map((it) => ({
           codigo_sai_sku: it.producto.codigo_sai_sku,
           numero_economico: it.numero_economico || null,
+          cantidad: it.cantidad || 1,
           diagnostico: it.diagnostico || null,
         })),
       })
@@ -184,6 +185,13 @@ export default function BajaHerramientaFormDialog({ open, onClose, onSaved, empl
                     </IconButton>
                   )}
                 </Stack>
+                <TextField
+                  label="Cantidad" type="number" fullWidth
+                  value={item.cantidad}
+                  onChange={(e) => actualizarItem(i, { cantidad: e.target.value })}
+                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                  helperText="Cuántas piezas de esta misma herramienta se dan de baja — se descuentan del stock."
+                />
                 <TextField
                   label="Número económico" fullWidth
                   value={item.numero_economico}
