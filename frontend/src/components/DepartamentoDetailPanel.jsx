@@ -33,7 +33,7 @@ export default function DepartamentoDetailPanel({ departamento: d, empleados, mo
         rows={movimientos}
         keyFn={(m) => m.row_id}
         onRowClick={(m) => navigate(`/control-de-resguardo?sel=${m.row_id}`)}
-        columns={columnasMovimientoCompletas()}
+        columns={columnasMovimientoCompletas(movimientos)}
       />
     </DetailPanel>
   )

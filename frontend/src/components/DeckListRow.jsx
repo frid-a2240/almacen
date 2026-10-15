@@ -1,4 +1,4 @@
-import { Box, Typography, IconButton, Tooltip } from '@mui/material'
+import { Box, Typography, IconButton, Tooltip, Chip } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
@@ -19,6 +19,7 @@ export default function DeckListRow({
   photoShape = 'square',
   title,
   subtitle,
+  badge,
   value,
   onView,
   onEdit,
@@ -71,10 +72,22 @@ export default function DeckListRow({
           <Typography fontWeight={600} fontSize={15} noWrap>
             {title}
           </Typography>
-          {subtitle && (
-            <Typography fontSize={13} color="text.secondary" noWrap component="div">
-              {subtitle}
-            </Typography>
+          {(subtitle || badge) && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+              {subtitle && (
+                <Typography fontSize={13} color="text.secondary" noWrap component="div">
+                  {subtitle}
+                </Typography>
+              )}
+              {badge && (
+                <Chip
+                  label={badge}
+                  size="small"
+                  variant="outlined"
+                  sx={{ height: 18, fontSize: 11, flexShrink: 0, '& .MuiChip-label': { px: 0.75 } }}
+                />
+              )}
+            </Box>
           )}
         </Box>
 

@@ -24,6 +24,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { coincideBusqueda } from '../utils/search.js'
 import { cumpleFiltros, contarFiltrosActivos } from '../utils/filters.js'
 import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
+import { calcularSaldosMovimientos, saldoDeMovimiento, herramientasActivasDeMovimiento, estadoSalida } from '../utils/saldoMovimientos.js'
 import useEsMovil from '../hooks/useEsMovil.js'
 
 const CAMPOS_BUSQUEDA = ['descripcion', 'nombre_de_empleado', 'codigo_sai_sku', 'numero_de_vale', 'id_numero_empleado']
@@ -80,28 +81,9 @@ export default function ControlResguardoPage() {
   // si ese empleado tiene más de UNA herramienta activa (entonces el ícono
   // es "Traspasar") o nada más esa (entonces es "Editar", restringido a
   // nombre y firma). Mismo criterio que resguardo_actual_de en el backend.
-  const saldosPorEmpleado = useMemo(() => {
-    const mapa = new Map()
-    for (const m of movimientos) {
-      const sku = m.producto_sku || m.codigo_sai_sku
-      if (!m.empleado_id || !sku) continue
-      const signo = m.tipo_movimiento === 'SALIDA' ? 1 : m.tipo_movimiento === 'ENTRADA' ? -1 : 0
-      if (!signo) continue
-      if (!mapa.has(m.empleado_id)) mapa.set(m.empleado_id, new Map())
-      const porSku = mapa.get(m.empleado_id)
-      porSku.set(sku, (porSku.get(sku) || 0) + signo * Number(m.cantidad))
-    }
-    return mapa
-  }, [movimientos])
-
-  const saldoDe = (empleadoId, sku) => saldosPorEmpleado.get(empleadoId)?.get(sku) || 0
-  const herramientasActivasDe = (empleadoId) => {
-    const porSku = saldosPorEmpleado.get(empleadoId)
-    if (!porSku) return 0
-    let n = 0
-    for (const saldo of porSku.values()) if (saldo > 0) n++
-    return n
-  }
+  const mapaSaldos = useMemo(() => calcularSaldosMovimientos(movimientos), [movimientos])
+  const saldoDe = (empleadoId, sku) => saldoDeMovimiento(mapaSaldos, empleadoId, sku)
+  const herramientasActivasDe = (empleadoId) => herramientasActivasDeMovimiento(mapaSaldos, empleadoId)
 
   // Empleados/productos/departamentos casi no cambian durante una sesión de
   // captura — solo se piden una vez al entrar. Guardar/editar/borrar un
@@ -231,6 +213,7 @@ export default function ControlResguardoPage() {
                   && saldoDe(m.empleado_id, sku) > 0
                   && herramientasActivasDe(m.empleado_id) > 1
                 )
+                const estado = estadoSalida(mapaSaldos, m)
                 return (
                 <DeckListRow
                   key={key}
@@ -239,6 +222,7 @@ export default function ControlResguardoPage() {
                   title={m.descripcion}
                   selected={seleccionado?.row_id === m.row_id}
                   subtitle={m.nombre_de_empleado}
+                  badge={estado}
                   value={m.cantidad}
                   onView={() => verDetalle(m)}
                   onEdit={!puedeEscribir || esTraspasable ? undefined : () => abrirEditar(m)}
