@@ -33,11 +33,11 @@ export function AuthProvider({ children }) {
 
  
   const logout = () => {
-    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(TOKEN_KEY) 
     setUsuario(null)
   }
 
-  useEffect(() => {
+  useEffect(() => {  
     alRecibirNoAutorizado(() => setUsuario(null))
   }, [])
 

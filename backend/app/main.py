@@ -58,14 +58,23 @@ def miniatura(ruta: str):
     """Versión chica (240px) de una foto/firma, generada y cacheada la primera
     vez que se pide — para listas con muchas filas (Control de Resguardo,
     Productos, etc.) donde la original de 100+ KB por foto hacía lento el
-    scroll conforme se descargaban las que van entrando en pantalla."""
+    scroll conforme se descargaban las que van entrando en pantalla.
+
+    Cuando se reemplaza una foto (misma fila, misma columna), la ruta queda
+    IDÉNTICA a la de antes (ver guardar_bytes) — con "max-age" los navegadores
+    que ya habían cargado esa URL se quedaban con la foto vieja en caché hasta
+    7 días, aunque el servidor ya tuviera la nueva (esto causó que una foto
+    tomada en la tablet no coincidiera con la que se veía en la laptop).
+    "no-cache" no significa "no cachear": el navegador sigue guardando el
+    archivo, pero cada vez revalida con el servidor (If-Modified-Since/ETag,
+    que FileResponse ya pone solo) en vez de usar la copia vieja a ciegas."""
     destino = ruta_miniatura(ruta)
     if destino is None:
         original = Path(settings.UPLOAD_DIR) / ruta
         if not original.is_file():
             raise HTTPException(404, "Archivo no encontrado")
-        return FileResponse(original)
-    return FileResponse(destino, headers={"Cache-Control": "public, max-age=604800"})
+        return FileResponse(original, headers={"Cache-Control": "no-cache"})
+    return FileResponse(destino, headers={"Cache-Control": "no-cache"})
 
 
 @api.get("/", tags=["Salud"])
