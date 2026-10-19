@@ -360,11 +360,14 @@ def actualizar(
     cambios = datos.model_dump(exclude_unset=True)
     # En un vale de SALIDA, editar solo debe poder corregir lo que se
     # reimprime en el vale (nombre de quien entrega, número económico, número
-    # de serie) y su firma (subida aparte, ver POST .../firma) — el resto del
-    # vale (folio, herramienta, empleado que recibe) no se toca desde aquí;
-    # para mover la herramienta a otra persona está el traspaso.
+    # de serie, cantidad) y su firma (subida aparte, ver POST .../firma) — el
+    # resto del vale (folio, herramienta, empleado que recibe) no se toca
+    # desde aquí; para mover la herramienta a otra persona está el traspaso.
     if mov.tipo_movimiento == "SALIDA":
-        cambios = {k: v for k, v in cambios.items() if k in ("nombre_usuario_entrega", "numero_economico", "numero_serie")}
+        cambios = {k: v for k, v in cambios.items() if k in ("nombre_usuario_entrega", "numero_economico", "numero_serie", "cantidad")}
+
+    if "cantidad" in cambios and (cambios["cantidad"] is None or cambios["cantidad"] <= 0):
+        raise HTTPException(422, "La cantidad debe ser mayor a 0")
 
     if "numero_economico" in cambios and cambios["numero_economico"] != mov.numero_economico:
         registrar_cambio(
@@ -378,7 +381,11 @@ def actualizar(
     db.commit()
     db.refresh(mov)
 
-    if mov.tipo_movimiento == "SALIDA" and cambios.keys() & {"nombre_usuario_entrega", "numero_economico"}:
+    # Cantidad se imprime en el vale y afecta el stock/saldo de resguardo
+    # (ver stock.py y resguardo.py, que suman directo de MovimientoResguardo.
+    # cantidad) — al cambiarla aquí no hace falta tocar nada más, ambos ya
+    # leen el valor vigente en cada consulta.
+    if mov.tipo_movimiento == "SALIDA" and cambios.keys() & {"nombre_usuario_entrega", "numero_economico", "cantidad"}:
         _guardar_vale_generado(db, [mov])
         db.refresh(mov)
     return mov

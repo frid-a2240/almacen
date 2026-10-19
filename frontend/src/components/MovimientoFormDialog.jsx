@@ -54,9 +54,11 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
   const [aviso, setAviso] = useState('')
 
   // Un vale de SALIDA ya hecho solo se puede corregir en nombre/# económico/#
-  // serie de entrega y su firma — el resto (folio, herramienta, cantidad, a
+  // serie de entrega, cantidad y su firma — el resto (folio, herramienta, a
   // quién se le entregó) no se edita aquí; para mover la herramienta a otra
-  // persona está el traspaso (ver TraspasoDialog).
+  // persona está el traspaso (ver TraspasoDialog). Cantidad se reimprime en
+  // el vale y de inmediato ajusta el stock/saldo de resguardo (ambos se
+  // calculan sumando MovimientoResguardo.cantidad vigente).
   const esEdicionSalida = !!movimiento && movimiento.tipo_movimiento === 'SALIDA'
 
   useEffect(() => {
@@ -119,6 +121,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
           nombre_usuario_entrega: nombreEntrega,
           numero_economico: form.numero_economico || null,
           numero_serie: form.numero_serie || null,
+          cantidad: form.cantidad,
         })
         if (firma) await subirFirma(rowId, firma)
         onSaved(rowId)
@@ -270,7 +273,13 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
                   onChange={(e) => setForm({ ...form, numero_economico: e.target.value })}
                   helperText="Editable — queda registrado en el historial de cambios."
                 />
-                <TextField label="Cantidad" value={form.cantidad} disabled fullWidth />
+                <TextField
+                  label="Cantidad" required type="number" fullWidth
+                  value={form.cantidad}
+                  onChange={(e) => setForm({ ...form, cantidad: e.target.value })}
+                  helperText="Ajusta el stock y el saldo de resguardo — y se reimprime el vale."
+                  slotProps={{ htmlInput: { min: 0.01, step: 'any' } }}
+                />
               </Stack>
               <TextField
                 label="Número de serie" fullWidth
@@ -478,7 +487,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
           disabled={
             guardando
             || (esEdicionSalida
-              ? !nombreEntrega
+              ? !nombreEntrega || !form.cantidad
               : !movimiento && (!empleadoSel || itemsIncompletos || faltaFirma))
           }
         >
