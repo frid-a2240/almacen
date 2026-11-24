@@ -195,11 +195,14 @@ def _validar_duplicados(
     ya_tiene = []
     for producto, numero_economico in items:
         if numero_economico:
-            otro_id = quien_tiene_numero_economico(db, producto.codigo_sai_sku, numero_economico)
-            if otro_id and otro_id != empleado.id_numero_empleado:
+            conflicto = quien_tiene_numero_economico(db, numero_economico)
+            if conflicto and conflicto != (empleado.id_numero_empleado, producto.codigo_sai_sku):
+                otro_id, otro_sku = conflicto
                 otro = db.get(Empleado, otro_id)
+                otro_producto = db.get(Producto, otro_sku)
                 nombre = otro.nombre_de_empleado if otro else otro_id
-                raise HTTPException(422, f"El número económico {numero_economico} ya está asignado a {nombre}.")
+                descripcion = otro_producto.descripcion if otro_producto else otro_sku
+                raise HTTPException(422, f"El número económico {numero_economico} ya está asignado a {nombre} ({descripcion}).")
         if saldo_actual(db, empleado.id_numero_empleado, producto.codigo_sai_sku) > 0:
             ya_tiene.append(producto.descripcion)
 
