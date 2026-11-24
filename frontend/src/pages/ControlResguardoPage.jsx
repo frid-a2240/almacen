@@ -120,6 +120,8 @@ export default function ControlResguardoPage() {
   const cerrarDetalle = () => setSearchParams({})
 
   const abrirNuevo = () => {
+    // El vale propone el número económico de la ficha: que sea el vigente.
+    listarProductos().then(setProductos).catch(() => {})
     setEditando(null)
     setDialogoAbierto(true)
   }

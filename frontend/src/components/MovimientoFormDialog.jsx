@@ -95,6 +95,13 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
   const actualizarItem = (i, cambios) => {
     setItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, ...cambios } : it)))
   }
+  // Al elegir la herramienta se pone su número económico; si no tiene, se
+  // respeta lo tecleado (salvo que fuera el de la herramienta anterior).
+  const elegirProducto = (i, producto) => {
+    const { numero_economico: actual, producto: anterior } = items[i]
+    const tecleado = actual === anterior?.numero_economico ? '' : actual
+    actualizarItem(i, { producto, numero_economico: producto?.numero_economico || tecleado })
+  }
   const agregarItem = () => setItems((prev) => [...prev, ITEM_VACIO])
   const quitarItem = (i) => setItems((prev) => prev.filter((_, idx) => idx !== i))
 
@@ -438,7 +445,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
                           options={productos}
                           getOptionLabel={(p) => `${p.descripcion} (${p.codigo_sai_sku})`}
                           value={item.producto}
-                          onChange={(_, v) => actualizarItem(i, { producto: v })}
+                          onChange={(_, v) => elegirProducto(i, v)}
                           renderInput={(params) => (
                             <TextField {...params} label={items.length > 1 ? `Producto ${i + 1}` : 'Producto'} required />
                           )}
