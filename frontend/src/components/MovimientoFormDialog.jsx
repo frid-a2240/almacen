@@ -272,7 +272,6 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           {aviso && <Alert severity="warning">{aviso}</Alert>}
-          {error && <Alert severity="error">{error}</Alert>}
           {esEdicionSalida ? (
             <>
               <TextField label="Fecha Movimiento" value={form.fecha_movimiento} disabled fullWidth />
@@ -503,6 +502,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
           )}
         </Stack>
       </DialogContent>
+      {error && <Alert severity="error" sx={{ mx: 3, mt: 1 }}>{error}</Alert>}
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
         <Button

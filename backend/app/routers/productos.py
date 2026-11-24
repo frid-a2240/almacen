@@ -15,6 +15,7 @@ from app.services.stock import stock_subquery, stock_de
 from app.services.resguardo import tenedores_actuales_de, saldos_por_empleado
 from app.services.asignados_excel import generar_asignados_excel
 from app.services.historico_excel import generar_historico_producto_excel
+from app.services.numero_economico import conflicto, normalizar
 from app.services.historial_numero_economico import registrar_cambio, historial_de
 from app.deps_auth import usuario_actual, bloquear_solo_consulta
 
@@ -60,6 +61,9 @@ def obtener(codigo_sai_sku: str, db: Session = Depends(get_db)):
 def crear(datos: ProductoCreate, db: Session = Depends(get_db), _=Depends(bloquear_solo_consulta)):
     if db.get(Producto, datos.codigo_sai_sku):
         raise HTTPException(409, "Ya existe un producto con ese código SAI/SKU")
+    mensaje = conflicto(db, datos.numero_economico, datos.codigo_sai_sku, en_vale=False)
+    if mensaje:
+        raise HTTPException(422, mensaje)
     prod = Producto(**datos.model_dump())
     db.add(prod)
     db.commit()
@@ -77,6 +81,12 @@ def actualizar(
         raise HTTPException(404, "Producto no encontrado")
     cambios = datos.model_dump(exclude_unset=True)
     if "numero_economico" in cambios and cambios["numero_economico"] != prod.numero_economico:
+        # Solo si de verdad cambia: las fichas que ya venían repetidas se
+        # deben poder seguir editando.
+        if normalizar(cambios["numero_economico"]) != normalizar(prod.numero_economico):
+            mensaje = conflicto(db, cambios["numero_economico"], codigo_sai_sku, en_vale=False)
+            if mensaje:
+                raise HTTPException(422, mensaje)
         registrar_cambio(
             db, entidad_tipo="producto", entidad_id=codigo_sai_sku,
             anterior=prod.numero_economico, nuevo=cambios["numero_economico"],

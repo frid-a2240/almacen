@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import {
   Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Stack,
-  ToggleButtonGroup, ToggleButton, Typography,
+  ToggleButtonGroup, ToggleButton, Typography, Alert,
 } from '@mui/material'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import CampoFoto from './CampoFoto.jsx'
+import { mensajeDeError } from '../api/client.js'
 import { crearProducto, actualizarProducto, subirFotoProducto, subirScanProducto } from '../api/productos.js'
 
 const UDM_OPCIONES = ['PZA', 'JGO', 'KIT', 'MT', 'SET', 'PAR', 'CJA', 'GAL']
@@ -21,11 +22,13 @@ export default function ProductoFormDialog({ open, onClose, onSaved, producto, c
   const [foto, setFoto] = useState(null)
   const [scan, setScan] = useState(null)
   const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!open) return
     setFoto(null)
     setScan(null)
+    setError('')
     setForm(producto ? {
       codigo_sai_sku: producto.codigo_sai_sku,
       tool_id: producto.tool_id || '',
@@ -45,6 +48,7 @@ export default function ProductoFormDialog({ open, onClose, onSaved, producto, c
 
   const guardar = async () => {
     setGuardando(true)
+    setError('')
     try {
       const payload = {
         ...form,
@@ -66,6 +70,8 @@ export default function ProductoFormDialog({ open, onClose, onSaved, producto, c
       if (foto) await subirFotoProducto(sku, foto)
       if (scan) await subirScanProducto(sku, scan)
       onSaved(sku)
+    } catch (err) {
+      setError(mensajeDeError(err) || 'No se pudo guardar el producto.')
     } finally {
       setGuardando(false)
     }
@@ -182,6 +188,7 @@ export default function ProductoFormDialog({ open, onClose, onSaved, producto, c
           )}
         </Stack>
       </DialogContent>
+      {error && <Alert severity="error" sx={{ mx: 3, mt: 1 }}>{error}</Alert>}
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
         <Button variant="contained" disableElevation onClick={guardar} disabled={guardando || !form.descripcion || (!producto && !form.codigo_sai_sku)}>

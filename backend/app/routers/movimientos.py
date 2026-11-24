@@ -15,7 +15,8 @@ from app.schemas.historial_numero_economico import HistorialNumeroEconomicoOut
 from app.services.uploads import guardar_archivo, guardar_bytes
 from app.services.folio import siguiente_folio
 from app.services.vale_pdf import generar_vale_pdf
-from app.services.resguardo import saldo_actual, quien_tiene_numero_economico
+from app.services.numero_economico import conflicto, normalizar
+from app.services.resguardo import saldo_actual
 from app.services.historial_numero_economico import registrar_cambio, historial_de
 from app.deps_auth import usuario_actual, bloquear_solo_consulta
 
@@ -108,7 +109,7 @@ def _fila_movimiento(
         producto_sku=producto.codigo_sai_sku,
         descripcion_snapshot=producto.descripcion,
         udm=producto.udm,
-        numero_economico=numero_economico or producto.numero_economico,
+        numero_economico=numero_economico,
         numero_serie=numero_serie,
         clase_familia=producto.clase_familia_ref.clase_familia if producto.clase_familia_ref else None,
         costo_unitario=producto.costo_unitario,
@@ -181,44 +182,43 @@ def _guardar_vale_generado(db: Session, filas: list[MovimientoResguardo]) -> Non
 
 def _validar_duplicados(
     db: Session, *, empleado: Empleado, items: list[tuple[Producto, str | None]], confirmar_duplicado: bool,
-) -> None:
-    """Dos validaciones sobre las herramientas de un vale de SALIDA nuevo:
-
-    1. El # económico identifica UNA pieza física — si ya está asignado
-       (saldo > 0) a otro empleado, es un error de captura (número repetido
-       o SKU equivocado) y se rechaza sin excepción posible.
-    2. Si el empleado destino YA tiene esa misma herramienta en resguardo,
-       puede ser intencional (una segunda pieza) o un doble capturado por
-       error — se rechaza con 409 la primera vez; el frontend le pregunta
-       "¿Desea asignar otra?" y, si confirma, reintenta con
-       confirmar_duplicado=True para dejarlo pasar."""
-    ya_tiene = []
-    for producto, numero_economico in items:
-        if numero_economico:
-            conflicto = quien_tiene_numero_economico(db, numero_economico)
-            if conflicto and conflicto != (empleado.id_numero_empleado, producto.codigo_sai_sku):
-                otro_id, otro_sku = conflicto
-                otro = db.get(Empleado, otro_id)
-                otro_producto = db.get(Producto, otro_sku)
-                nombre = otro.nombre_de_empleado if otro else otro_id
-                descripcion = otro_producto.descripcion if otro_producto else otro_sku
-                raise HTTPException(422, f"El número económico {numero_economico} ya está asignado a {nombre} ({descripcion}).")
-        if saldo_actual(db, empleado.id_numero_empleado, producto.codigo_sai_sku) > 0:
+) -> list[str | None]:
+    """Valida un vale de SALIDA nuevo y regresa el número económico con el que
+    queda cada renglón. Un número ya ocupado se rechaza (422); si el empleado
+    ya tiene esa herramienta se rechaza con 409 hasta que confirme."""
+    numeros, usados, ya_tiene = [], set(), []
+    for producto, capturado in items:
+        sku = producto.codigo_sai_sku
+        numero = (capturado or "").strip() or None
+        if numero:
+            mensaje = conflicto(db, numero, sku, en_vale=True)
+            if not mensaje and normalizar(numero) in usados:
+                mensaje = f"El número económico {numero} está repetido en este vale."
+            if mensaje:
+                raise HTTPException(422, mensaje)
+        else:
+            # En blanco se toma el de la ficha, salvo que esa pieza ya esté
+            # entregada: entonces esta es otra y no debe heredar su número.
+            numero = producto.numero_economico
+            if conflicto(db, numero, sku, en_vale=True) or normalizar(numero) in usados:
+                numero = None
+        if normalizar(numero):
+            usados.add(normalizar(numero))
+        numeros.append(numero)
+        if saldo_actual(db, empleado.id_numero_empleado, sku) > 0:
             ya_tiene.append(producto.descripcion)
 
     if ya_tiene and not confirmar_duplicado:
         lista = ", ".join(dict.fromkeys(ya_tiene))
         raise HTTPException(409, f"{empleado.nombre_de_empleado} ya tiene a su resguardo: {lista}. ¿Desea asignar otra?")
+    return numeros
 
 
 def _sincronizar_numero_economico(producto: Producto, numero_economico: str | None) -> None:
-    """Si la ficha del producto todavía no tiene número económico de
-    catálogo, se le asigna el que se acaba de capturar en este vale — mismo
-    criterio que ya existe para la foto de referencia (ver subir_foto_
-    producto): la primera vez que se usa un valor real, se vuelve el
-    default de esa herramienta, sin pisar uno que ya tuviera."""
-    if numero_economico and not producto.numero_economico:
-        producto.numero_economico = numero_economico
+    """El primer número real capturado en un vale queda como el de la ficha,
+    sin pisar uno que ya tuviera."""
+    if normalizar(numero_economico) and not normalizar(producto.numero_economico):
+        producto.numero_economico = numero_economico.strip()
 
 
 @router.post("/", response_model=MovimientoOut, status_code=201)
@@ -236,12 +236,13 @@ def crear(
     if not producto:
         raise HTTPException(404, "Producto no encontrado")
 
+    numero_economico = datos.numero_economico or producto.numero_economico
     if datos.tipo_movimiento == "SALIDA":
-        _validar_duplicados(
+        [numero_economico] = _validar_duplicados(
             db, empleado=empleado, items=[(producto, datos.numero_economico)],
             confirmar_duplicado=datos.confirmar_duplicado,
         )
-        _sincronizar_numero_economico(producto, datos.numero_economico)
+        _sincronizar_numero_economico(producto, numero_economico)
 
     # El folio del vale electrónico se asigna solo (consecutivo) cuando es una
     # SALIDA nueva y no se mandó uno a mano — así el vale sale listo para
@@ -254,7 +255,7 @@ def crear(
         db, empleado=empleado, producto=producto, usuario=usuario,
         fecha_movimiento=datos.fecha_movimiento, numero_de_vale=numero_de_vale,
         tipo_movimiento=datos.tipo_movimiento, status=datos.status,
-        cantidad=datos.cantidad, numero_economico=datos.numero_economico,
+        cantidad=datos.cantidad, numero_economico=numero_economico,
         numero_serie=datos.numero_serie, observaciones=datos.observaciones,
     )
     db.add(mov)
@@ -290,13 +291,13 @@ def crear_salida_multiple(
                 raise HTTPException(404, f"Producto no encontrado: {item.codigo_sai_sku}")
             productos[item.codigo_sai_sku] = producto
 
-    _validar_duplicados(
+    numeros = _validar_duplicados(
         db, empleado=empleado,
         items=[(productos[item.codigo_sai_sku], item.numero_economico) for item in datos.items],
         confirmar_duplicado=datos.confirmar_duplicado,
     )
-    for item in datos.items:
-        _sincronizar_numero_economico(productos[item.codigo_sai_sku], item.numero_economico)
+    for item, numero in zip(datos.items, numeros):
+        _sincronizar_numero_economico(productos[item.codigo_sai_sku], numero)
 
     numero_de_vale = siguiente_folio(db)
     ahora = datetime.now()
@@ -305,11 +306,11 @@ def crear_salida_multiple(
             db, empleado=empleado, producto=productos[item.codigo_sai_sku], usuario=usuario,
             fecha_movimiento=datos.fecha_movimiento, numero_de_vale=numero_de_vale,
             tipo_movimiento="SALIDA", status=datos.status,
-            cantidad=item.cantidad, numero_economico=item.numero_economico,
+            cantidad=item.cantidad, numero_economico=numero,
             numero_serie=item.numero_serie, observaciones=datos.observaciones,
             creado_en=ahora,
         )
-        for item in datos.items
+        for item, numero in zip(datos.items, numeros)
     ]
     db.add_all(filas)
     db.commit()
@@ -427,6 +428,13 @@ def actualizar(
         raise HTTPException(422, "La cantidad debe ser mayor a 0")
 
     if "numero_economico" in cambios and cambios["numero_economico"] != mov.numero_economico:
+        sku = mov.producto_sku or mov.codigo_sai_sku
+        if mov.tipo_movimiento == "SALIDA" and normalizar(cambios["numero_economico"]) != normalizar(mov.numero_economico):
+            mensaje = conflicto(db, cambios["numero_economico"], sku, en_vale=True, excluir_row_id=mov.row_id)
+            if mensaje:
+                raise HTTPException(422, mensaje)
+            if mov.producto_ref:
+                _sincronizar_numero_economico(mov.producto_ref, cambios["numero_economico"])
         registrar_cambio(
             db, entidad_tipo="movimiento", entidad_id=mov.row_id,
             anterior=mov.numero_economico, nuevo=cambios["numero_economico"],

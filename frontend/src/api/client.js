@@ -64,7 +64,7 @@ export function mensajeDeError(err) {
       return null
     }
   }
-  return data?.detail || null
+  return typeof data?.detail === 'string' ? data.detail : null
 }
 
 export default client
