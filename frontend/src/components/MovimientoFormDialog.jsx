@@ -7,6 +7,7 @@ import AddIcon from '@mui/icons-material/Add'
 import CloseIcon from '@mui/icons-material/Close'
 import dayjs from 'dayjs'
 import CampoFoto from './CampoFoto.jsx'
+import ConfirmDialog from './ConfirmDialog.jsx'
 import FotosMultiples from './FotosMultiples.jsx'
 import GaleriaFotosExistentes from './GaleriaFotosExistentes.jsx'
 import SignaturePad from './SignaturePad.jsx'
@@ -16,6 +17,7 @@ import {
   subirFotoVale, subirFotoProductoMovimiento, subirFotoNumeroSerie, subirFirma,
   agregarFotoMovimiento, quitarFotoMovimiento,
 } from '../api/movimientos.js'
+import { mensajeDeError } from '../api/client.js'
 import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
 import { formatoFechaHora } from '../utils/formatters.js'
 
@@ -52,6 +54,10 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
   const [fotosExistentes, setFotosExistentes] = useState([])
   const [guardando, setGuardando] = useState(false)
   const [aviso, setAviso] = useState('')
+  const [error, setError] = useState('')
+  // Mensaje del backend cuando el empleado ya tiene esta herramienta (409) —
+  // no es un error duro, se le pregunta si de todos modos quiere asignarla.
+  const [confirmarDuplicado, setConfirmarDuplicado] = useState('')
 
   // Un vale de SALIDA ya hecho solo se puede corregir en nombre/# económico/#
   // serie de entrega, cantidad y su firma — el resto (folio, herramienta, a
@@ -72,6 +78,8 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
     setNombreEntrega(movimiento?.nombre_usuario_entrega || '')
     setFotosExistentes(movimiento?.fotos || [])
     setAviso('')
+    setError('')
+    setConfirmarDuplicado('')
     setForm(movimiento ? {
       fecha_movimiento: movimiento.fecha_movimiento,
       numero_de_vale: movimiento.numero_de_vale || '',
@@ -108,13 +116,14 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
     setFotosExistentes(actualizado.fotos || [])
   }
 
-  const guardar = async () => {
+  const guardar = async (forzarDuplicado = false) => {
     if (esEdicionSalida) {
       // Edición restringida: nombre/# económico/# serie de entrega y firma —
       // el vale ya impreso (folio, herramienta, empleado) no cambia. El
       // backend regenera el PDF ("Foto Vale de Salida") si hace falta.
       setGuardando(true)
       setAviso('')
+      setError('')
       try {
         const rowId = movimiento.row_id
         await actualizarMovimiento(rowId, {
@@ -125,6 +134,8 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
         })
         if (firma) await subirFirma(rowId, firma)
         onSaved(rowId)
+      } catch (err) {
+        setError(mensajeDeError(err) || 'No se pudo guardar el movimiento.')
       } finally {
         setGuardando(false)
       }
@@ -141,6 +152,8 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
 
     setGuardando(true)
     setAviso('')
+    setError('')
+    setConfirmarDuplicado('')
     let huboProblema = false
     try {
       let rowId = movimiento?.row_id
@@ -156,6 +169,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
           cantidad: items[0].cantidad,
           id_numero_empleado: empleadoSel.id_numero_empleado,
           codigo_sai_sku: items[0].producto.codigo_sai_sku,
+          confirmar_duplicado: forzarDuplicado,
         })
         rowId = creado.row_id
         rowIds = [rowId]
@@ -169,6 +183,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
           id_numero_empleado: empleadoSel.id_numero_empleado,
           status: form.status,
           observaciones: form.observaciones,
+          confirmar_duplicado: forzarDuplicado,
           items: items.map((it) => ({
             codigo_sai_sku: it.producto.codigo_sai_sku,
             cantidad: it.cantidad,
@@ -235,7 +250,14 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       if (!huboProblema) onSaved(rowId)
     } catch (err) {
       ventanaImpresion?.close()
-      throw err
+      if (err.response?.status === 409) {
+        // "Ya tiene esta herramienta a resguardo" — no es un error duro, se
+        // le pregunta si de todos modos quiere asignarla (ver ConfirmDialog
+        // más abajo); si confirma, se reintenta con forzarDuplicado=true.
+        setConfirmarDuplicado(mensajeDeError(err) || 'Este colaborador ya tiene esta herramienta a resguardo. ¿Desea asignar otra?')
+      } else {
+        setError(mensajeDeError(err) || 'No se pudo guardar el movimiento.')
+      }
     } finally {
       setGuardando(false)
     }
@@ -250,6 +272,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
           {aviso && <Alert severity="warning">{aviso}</Alert>}
+          {error && <Alert severity="error">{error}</Alert>}
           {esEdicionSalida ? (
             <>
               <TextField label="Fecha Movimiento" value={form.fecha_movimiento} disabled fullWidth />
@@ -483,7 +506,7 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
         <Button
-          variant="contained" disableElevation onClick={guardar}
+          variant="contained" disableElevation onClick={() => guardar()}
           disabled={
             guardando
             || (esEdicionSalida
@@ -494,6 +517,16 @@ export default function MovimientoFormDialog({ open, onClose, onSaved, movimient
           Guardar
         </Button>
       </DialogActions>
+
+      <ConfirmDialog
+        open={!!confirmarDuplicado}
+        title="Herramienta ya asignada"
+        message={confirmarDuplicado}
+        confirmLabel="Sí, asignar otra"
+        confirmColor="primary"
+        onCancel={() => setConfirmarDuplicado('')}
+        onConfirm={() => { setConfirmarDuplicado(''); guardar(true) }}
+      />
     </Dialog>
   )
 }

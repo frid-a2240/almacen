@@ -17,7 +17,11 @@ import { imprimirPdf, abrirVentanaImpresion } from '../utils/imprimir.js'
 // página) se queda con la fecha de ayer.
 const VACIO = { folio: '', fecha: dayjs().format('YYYY-MM-DD'), observaciones: '' }
 const ITEM_VACIO = { producto: null, numero_economico: '', cantidad: 1, diagnostico: '' }
-const MAX_HERRAMIENTAS = 20
+// Antes era 20 — bloqueaba las bajas masivas (de verdad con muchas
+// herramientas) sin avisar por qué ya no dejaba agregar más. El PDF ya
+// soporta cualquier cantidad (ver baja_pdf.py), así que el límite de aquí
+// es solo para no dejarlo sin tope por error de captura.
+const MAX_HERRAMIENTAS = 200
 
 export default function BajaHerramientaFormDialog({ open, onClose, onSaved, empleados, productos }) {
   const [form, setForm] = useState(VACIO)

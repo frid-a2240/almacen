@@ -112,6 +112,28 @@ def saldo_actual(db: Session, empleado_id: str, sku: str) -> Decimal:
     return resultado or Decimal(0)
 
 
+def quien_tiene_numero_economico(db: Session, sku: str, numero_economico: str) -> str | None:
+    """Si alguien tiene actualmente (saldo > 0) este # económico de este
+    producto en resguardo, regresa el id de ese empleado — el # económico
+    identifica UNA pieza física, así que no debería poder asignarse dos
+    veces mientras la primera sigue activa (evita un doble registro por
+    error de captura). None si nadie lo tiene ahorita."""
+    if not numero_economico:
+        return None
+    m = MovimientoResguardo
+    clave = func.coalesce(m.producto_sku, m.codigo_sai_sku)
+    salida = func.coalesce(func.sum(case((m.tipo_movimiento == "SALIDA", m.cantidad), else_=0)), 0)
+    entrada = func.coalesce(func.sum(case((m.tipo_movimiento == "ENTRADA", m.cantidad), else_=0)), 0)
+    fila = (
+        db.query(m.empleado_id)
+        .filter(clave == sku, m.numero_economico == numero_economico, m.empleado_id.isnot(None))
+        .group_by(m.empleado_id)
+        .having(salida - entrada > 0)
+        .first()
+    )
+    return fila[0] if fila else None
+
+
 def saldos_por_sku(db: Session, empleado_id: str) -> dict:
     """Saldo (SALIDA - ENTRADA) de CADA producto que un empleado alguna vez
     tuvo, sin filtrar a los positivos (a diferencia de resguardo_actual_de) —

@@ -15,6 +15,10 @@ class MovimientoCreate(BaseModel):
     numero_economico: Optional[str] = None
     numero_serie: Optional[str] = None
     observaciones: Optional[str] = None
+    # En blanco (False): si el empleado ya tiene esta misma herramienta en
+    # resguardo, el backend rechaza con 409 en vez de guardar — el frontend
+    # le pregunta "¿Desea asignar otra?" y, si confirma, reenvía esto en True.
+    confirmar_duplicado: bool = False
 
 
 class ItemVale(BaseModel):
@@ -31,6 +35,7 @@ class SalidaMultipleCreate(BaseModel):
     status: str = "ACTIVO"
     observaciones: Optional[str] = None
     items: list[ItemVale]
+    confirmar_duplicado: bool = False
 
 
 class MovimientoUpdate(BaseModel):

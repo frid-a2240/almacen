@@ -18,9 +18,13 @@ Dos caminos, según qué tan grande sea la baja:
   FORMATO DE BAJA DE HERRAMIENTA MCR.xlsm") vía Excel/COM, después de borrar
   los datos de muestra y las 3 fotos de ejemplo (dejando el logo y las
   líneas de firma intactos) — un proceso hecho una sola vez, no en cada
-  request. Trae 20 renglones fijos (19 en la página 1, el 20o al inicio de
-  la página 2) y 4 espacios de foto fijos (páginas 2 y 3) — si hay más de 4
-  fotos se agregan páginas extra reutilizando el diseño de la página 3.
+  request. Su página de tabla trae 19 renglones — si hay más herramientas
+  de las que caben en una hoja, se repite esa misma página de tabla (copia
+  limpia de la plantilla) las veces que haga falta antes de pasar a
+  observaciones/firma/evidencia (ver "bajas masivas" en _generar_con_
+  plantilla). Trae además 4 espacios de foto fijos (páginas 2 y 3) — si hay
+  más de 4 fotos se agregan páginas extra reutilizando el diseño de la
+  página 3.
 
 Coordenadas calibradas a mano contra la plantilla con pdfplumber (mismo
 método que vale_pdf.py); los colores/proporciones de la hoja compacta salen
@@ -44,7 +48,6 @@ _LOGO = _ASSETS / "logo_isp.jpg"
 _PLANTILLA = Path(__file__).resolve().parent.parent / "templates" / "baja_herramienta.pdf"
 _ANCHO_PAGINA, _ALTO_PAGINA = 612.0, 792.0
 _MAX_FILAS_P1 = 19
-_MAX_FILAS_TOTAL = 20
 _GRIS = HexColor("#999999")
 
 # A partir de cuántas herramientas se usa la plantilla real completa en vez
@@ -196,25 +199,21 @@ def _pareja_fotos(c, fotos, top_imagen, alto_imagen, top_texto):
         _texto(c, x + 90, top_texto + 13, foto.numeros_economicos, size=8, max_width=ancho - 95, size_min=6)
 
 
-def _pagina1(c, baja):
+def _pagina_tabla(c, baja, items_pagina):
     _encabezado(c, baja, top_fecha=104, top_persona=142)
-    for i, item in enumerate(baja.items[:_MAX_FILAS_P1]):
+    for i, item in enumerate(items_pagina):
         _fila_tabla(c, _FILA_1 + (i + 1) * _ALTO_FILA - 8, item)
 
 
 def _pagina2(c, baja):
-    # Renglón 20 de la tabla (si lo hay) — el único que no cupo en la página 1.
-    if len(baja.items) > _MAX_FILAS_P1:
-        _fila_tabla(c, 73, baja.items[_MAX_FILAS_P1])
-
-    if len(baja.items) > _MAX_FILAS_TOTAL:
-        c.setFont("Helvetica-Oblique", 7)
-        c.setFillColor(_GRIS)
-        c.drawString(59, _y(96), f"+ {len(baja.items) - _MAX_FILAS_TOTAL} herramienta(s) más — ver el registro en el sistema.")
-
     if baja.observaciones:
         c.setFillColor(black)
-        for i, linea in enumerate(_envolver(c, baja.observaciones, 9, 495)[:5]):
+        # Caja real medida en la plantilla (pdfplumber): "Observaciones:"
+        # empieza en top=97.8 y la caja cierra en top=229.6, antes de las
+        # líneas de FIRMA — probado a ojo contra el PDF real: con 12pt entre
+        # líneas, 6 es lo más que cabe sin encimarse con la firma (antes
+        # eran 5, aquí sobraba espacio sin usar).
+        for i, linea in enumerate(_envolver(c, baja.observaciones, 9, 495)[:6]):
             _texto(c, 59, 122 + 12 * i, linea, size=9)
 
     # El encabezado se repite antes de "EVIDENCIA FOTOGRAFICA" (así viene en
@@ -229,20 +228,29 @@ def _pagina_fotos_extra(c, fotos_par):
 
 def _generar_con_plantilla(baja) -> bytes:
     """Baja grande (más de _UMBRAL_COMPACTO herramientas): usa la plantilla
-    real completa (20 renglones fijos, 4 espacios de foto fijos + páginas
-    extra si hacen falta más)."""
-    base = PdfReader(str(_PLANTILLA))
+    real completa. La plantilla trae 19 renglones de tabla por hoja — con
+    más herramientas de las que caben en una sola, se repite esa misma hoja
+    (copia limpia de la página 1 de la plantilla) las veces que haga falta
+    antes de pasar a observaciones/firma/evidencia.
+
+    Antes, lo que pasaba de 20 herramientas en total se omitía del PDF por
+    completo (sin SKU, # económico ni diagnóstico impresos), dejando solo una
+    nota de "+N más" — la "baja masiva" sí se guardaba en el sistema, pero
+    no salía completa en el formato para firmar."""
     writer = PdfWriter()
 
-    overlay1 = BytesIO()
-    c = canvas.Canvas(overlay1, pagesize=(_ANCHO_PAGINA, _ALTO_PAGINA))
-    _pagina1(c, baja)
-    c.showPage()
-    c.save()
-    overlay1.seek(0)
-    p1 = base.pages[0]
-    p1.merge_page(PdfReader(overlay1).pages[0])
-    writer.add_page(p1)
+    items = list(baja.items)
+    paginas_items = [items[i:i + _MAX_FILAS_P1] for i in range(0, len(items), _MAX_FILAS_P1)] or [[]]
+    for pagina_items in paginas_items:
+        overlay = BytesIO()
+        c = canvas.Canvas(overlay, pagesize=(_ANCHO_PAGINA, _ALTO_PAGINA))
+        _pagina_tabla(c, baja, pagina_items)
+        c.showPage()
+        c.save()
+        overlay.seek(0)
+        p = PdfReader(str(_PLANTILLA)).pages[0]
+        p.merge_page(PdfReader(overlay).pages[0])
+        writer.add_page(p)
 
     overlay2 = BytesIO()
     c = canvas.Canvas(overlay2, pagesize=(_ANCHO_PAGINA, _ALTO_PAGINA))
@@ -250,7 +258,7 @@ def _generar_con_plantilla(baja) -> bytes:
     c.showPage()
     c.save()
     overlay2.seek(0)
-    p2 = base.pages[1]
+    p2 = PdfReader(str(_PLANTILLA)).pages[1]
     p2.merge_page(PdfReader(overlay2).pages[0])
     writer.add_page(p2)
 
@@ -260,7 +268,7 @@ def _generar_con_plantilla(baja) -> bytes:
     c.showPage()
     c.save()
     overlay3.seek(0)
-    p3 = base.pages[2]
+    p3 = PdfReader(str(_PLANTILLA)).pages[2]
     p3.merge_page(PdfReader(overlay3).pages[0])
     writer.add_page(p3)
 

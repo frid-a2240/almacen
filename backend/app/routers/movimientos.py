@@ -15,7 +15,7 @@ from app.schemas.historial_numero_economico import HistorialNumeroEconomicoOut
 from app.services.uploads import guardar_archivo, guardar_bytes
 from app.services.folio import siguiente_folio
 from app.services.vale_pdf import generar_vale_pdf
-from app.services.resguardo import saldo_actual
+from app.services.resguardo import saldo_actual, quien_tiene_numero_economico
 from app.services.historial_numero_economico import registrar_cambio, historial_de
 from app.deps_auth import usuario_actual, bloquear_solo_consulta
 
@@ -179,6 +179,35 @@ def _guardar_vale_generado(db: Session, filas: list[MovimientoResguardo]) -> Non
     db.commit()
 
 
+def _validar_duplicados(
+    db: Session, *, empleado: Empleado, items: list[tuple[Producto, str | None]], confirmar_duplicado: bool,
+) -> None:
+    """Dos validaciones sobre las herramientas de un vale de SALIDA nuevo:
+
+    1. El # económico identifica UNA pieza física — si ya está asignado
+       (saldo > 0) a otro empleado, es un error de captura (número repetido
+       o SKU equivocado) y se rechaza sin excepción posible.
+    2. Si el empleado destino YA tiene esa misma herramienta en resguardo,
+       puede ser intencional (una segunda pieza) o un doble capturado por
+       error — se rechaza con 409 la primera vez; el frontend le pregunta
+       "¿Desea asignar otra?" y, si confirma, reintenta con
+       confirmar_duplicado=True para dejarlo pasar."""
+    ya_tiene = []
+    for producto, numero_economico in items:
+        if numero_economico:
+            otro_id = quien_tiene_numero_economico(db, producto.codigo_sai_sku, numero_economico)
+            if otro_id and otro_id != empleado.id_numero_empleado:
+                otro = db.get(Empleado, otro_id)
+                nombre = otro.nombre_de_empleado if otro else otro_id
+                raise HTTPException(422, f"El número económico {numero_economico} ya está asignado a {nombre}.")
+        if saldo_actual(db, empleado.id_numero_empleado, producto.codigo_sai_sku) > 0:
+            ya_tiene.append(producto.descripcion)
+
+    if ya_tiene and not confirmar_duplicado:
+        lista = ", ".join(dict.fromkeys(ya_tiene))
+        raise HTTPException(409, f"{empleado.nombre_de_empleado} ya tiene a su resguardo: {lista}. ¿Desea asignar otra?")
+
+
 @router.post("/", response_model=MovimientoOut, status_code=201)
 def crear(
     datos: MovimientoCreate, db: Session = Depends(get_db),
@@ -193,6 +222,12 @@ def crear(
         raise HTTPException(404, "Empleado no encontrado")
     if not producto:
         raise HTTPException(404, "Producto no encontrado")
+
+    if datos.tipo_movimiento == "SALIDA":
+        _validar_duplicados(
+            db, empleado=empleado, items=[(producto, datos.numero_economico)],
+            confirmar_duplicado=datos.confirmar_duplicado,
+        )
 
     # El folio del vale electrónico se asigna solo (consecutivo) cuando es una
     # SALIDA nueva y no se mandó uno a mano — así el vale sale listo para
@@ -240,6 +275,12 @@ def crear_salida_multiple(
             if not producto:
                 raise HTTPException(404, f"Producto no encontrado: {item.codigo_sai_sku}")
             productos[item.codigo_sai_sku] = producto
+
+    _validar_duplicados(
+        db, empleado=empleado,
+        items=[(productos[item.codigo_sai_sku], item.numero_economico) for item in datos.items],
+        confirmar_duplicado=datos.confirmar_duplicado,
+    )
 
     numero_de_vale = siguiente_folio(db)
     ahora = datetime.now()
