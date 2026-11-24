@@ -211,6 +211,16 @@ def _validar_duplicados(
         raise HTTPException(409, f"{empleado.nombre_de_empleado} ya tiene a su resguardo: {lista}. ¿Desea asignar otra?")
 
 
+def _sincronizar_numero_economico(producto: Producto, numero_economico: str | None) -> None:
+    """Si la ficha del producto todavía no tiene número económico de
+    catálogo, se le asigna el que se acaba de capturar en este vale — mismo
+    criterio que ya existe para la foto de referencia (ver subir_foto_
+    producto): la primera vez que se usa un valor real, se vuelve el
+    default de esa herramienta, sin pisar uno que ya tuviera."""
+    if numero_economico and not producto.numero_economico:
+        producto.numero_economico = numero_economico
+
+
 @router.post("/", response_model=MovimientoOut, status_code=201)
 def crear(
     datos: MovimientoCreate, db: Session = Depends(get_db),
@@ -231,6 +241,7 @@ def crear(
             db, empleado=empleado, items=[(producto, datos.numero_economico)],
             confirmar_duplicado=datos.confirmar_duplicado,
         )
+        _sincronizar_numero_economico(producto, datos.numero_economico)
 
     # El folio del vale electrónico se asigna solo (consecutivo) cuando es una
     # SALIDA nueva y no se mandó uno a mano — así el vale sale listo para
@@ -284,6 +295,8 @@ def crear_salida_multiple(
         items=[(productos[item.codigo_sai_sku], item.numero_economico) for item in datos.items],
         confirmar_duplicado=datos.confirmar_duplicado,
     )
+    for item in datos.items:
+        _sincronizar_numero_economico(productos[item.codigo_sai_sku], item.numero_economico)
 
     numero_de_vale = siguiente_folio(db)
     ahora = datetime.now()
