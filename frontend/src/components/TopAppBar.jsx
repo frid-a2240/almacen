@@ -48,7 +48,7 @@ export default function TopAppBar({ onToggleSidebar }) {
           variant="subtitle1" fontWeight={600} noWrap
           sx={{ mr: 2, letterSpacing: 0.5, display: { xs: 'none', sm: 'block' } }}
         >
-          PAÑOL
+          TOOL ID
         </Typography>
 
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', minWidth: 0 }}>
